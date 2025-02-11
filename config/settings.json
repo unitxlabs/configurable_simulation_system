@@ -1,0 +1,7 @@
+{
+  "DATABASE_NAME": "sale_auto_simulation",
+  "USERNAME": "postgres",
+  "PASSWORD": "mysecretpassword",
+  "LOCAL_HOST": "localhost",
+  "ECHO_LOG": false
+}
