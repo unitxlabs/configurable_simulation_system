@@ -1,0 +1,11 @@
+# To ignore node_modules folder for UI
+node_modules/
+
+# To ignore log files
+*.log
+
+# To ignore JetBrain configuration
+.idea/
+
+# To ignore environment-related files
+.env
