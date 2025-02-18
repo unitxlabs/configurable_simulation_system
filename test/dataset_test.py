@@ -253,19 +253,19 @@ def simulation_result_query_test():
 
 if __name__ == "__main__":
     # ipc_config_add_data_test()
-
+    #
     # ipc_config_update_data_test()
-
+    #
     # controller_config_add_data_test()
-
+    #
     # workstation_config_add_data_test()
 
-    # communication_config_add_data_test()
+    communication_config_add_data_test()
 
     # simulation_result_add_data_test()
-
+    #
     # ipc_performance_add_data_test()
-
+    #
     # simulation_result_query_test()
 
     print(f"Done")

@@ -1,0 +1,7 @@
+{
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13700K (24 cores)",
+    "gpu": "NVIDIA GeForce RTX 4080",
+    "ram": "62.56 GB",
+    "ssd": "466.72 GB",
+    "os": "Linux 6.2.0-35-generic"
+}

@@ -10,15 +10,10 @@
 
       <div v-if="activeTab === 'saved'">
         <h2>保存的设置</h2>
-        <div class="toolbar">
-          <label>握手步数：</label>
-          <select v-model="handshakeSteps">
-            <option value="2">2步</option>
-            <option value="4">4步</option>
-          </select>
-          <input type="text" placeholder="物料类型" />
-          <input type="text" placeholder="物料时间间隔 (s)" />
-          <input type="text" placeholder="part start 到第一个工位的时间间隔 (s)" />
+        <div class="filters">
+          <input v-model="searchQuery" placeholder="🔍 搜索" />
+          <input v-model="filterMaterial" placeholder="物料间隔" />
+          <button>新建</button>
         </div>
         <div class="toolbar">
           <button>应用</button>
@@ -32,18 +27,20 @@
             <tr>
               <th>是否启用</th>
               <th>控制器ID</th>
-              <th>控制器版本</th>
-              <th>连接的相机</th>
-              <th>相机分辨率</th>
+              <th>到下一个工位的时间 (ms)</th>
+              <th>sequence的数量</th>
+              <th>sequence之间的时间间隔 (us)</th>
+              <th>相机复位时间间隔 (s)</th> <!-- 新增的列 -->
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, index) in savedControllers" :key="index">
+            <tr v-for="(entry, index) in savedSettings" :key="index">
               <td><input type="checkbox" v-model="entry.enabled" /></td>
               <td>{{ entry.id }}</td>
-              <td>{{ entry.version }}</td>
-              <td>{{ entry.camera }}</td>
-              <td>{{ entry.resolution }}</td>
+              <td>{{ entry.timeToNext }}</td>
+              <td>{{ entry.sequenceCount }}</td>
+              <td>{{ entry.sequenceIntervals }}</td>
+              <td>{{ entry.cameraResetInterval }} </td> <!-- 显示相机复位时间间隔 -->
             </tr>
           </tbody>
         </table>
@@ -51,7 +48,6 @@
 
       <div v-if="activeTab === 'new'">
         <h2>新建设置</h2>
-        <input v-model="newControllerName" placeholder="新设置名" />
         <div class="toolbar">
           <button>应用</button>
           <button>取消</button>
@@ -63,18 +59,20 @@
             <tr>
               <th>是否启用</th>
               <th>控制器ID</th>
-              <th>控制器版本</th>
-              <th>连接的相机</th>
-              <th>相机分辨率</th>
+              <th>到下一个工位的时间 (ms)</th>
+              <th>sequence的数量</th>
+              <th>sequence之间的时间间隔 (us)</th>
+              <th>相机复位时间间隔 (s)</th> <!-- 新增的列 -->
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, index) in newControllers" :key="index">
+            <tr v-for="(entry, index) in newSettings" :key="index">
               <td><input type="checkbox" v-model="entry.enabled" /></td>
               <td>{{ entry.id }}</td>
-              <td>{{ entry.version }}</td>
-              <td>{{ entry.camera }}</td>
-              <td>{{ entry.resolution }}</td>
+              <td>{{ entry.timeToNext }}</td>
+              <td>{{ entry.sequenceCount }}</td>
+              <td>{{ entry.sequenceIntervals }}</td>
+              <td>{{ entry.cameraResetInterval }} </td> <!-- 显示相机复位时间间隔 -->
             </tr>
           </tbody>
         </table>
@@ -84,19 +82,39 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios'; // 导入axios
 
-const activeTab = ref('saved');
-const newControllerName = ref('');
-const handshakeSteps = ref('2');
-const savedControllers = ref([
-  { enabled: true, id: '3232238091', version: 'V6', camera: 'L38458111', resolution: '2448*2048' },
-  { enabled: true, id: '3232238092', version: 'V6', camera: 'L38458115', resolution: '2448*2048' }
+const activeTab = ref('saved'); // 默认显示"保存的设置"选项卡
+const searchQuery = ref('');
+const filterMaterial = ref('');
+const savedSettings = ref([]);
+const newSettings = ref([
+  { enabled: true, id: '3232238093', timeToNext: '1500', sequenceCount: '4', sequenceIntervals: '30000, 30000, 30000', cameraResetInterval: 2 },
+  { enabled: true, id: '3232238094', timeToNext: '1600', sequenceCount: '2', sequenceIntervals: '30000, 30000', cameraResetInterval: 3 }
 ]);
-const newControllers = ref([
-  { enabled: true, id: '3232238093', version: 'V6', camera: 'L38458123', resolution: '2448*2048' },
-  { enabled: true, id: '3232238094', version: 'V6', camera: 'L38458235', resolution: '2448*2048' }
-]);
+
+// 读取保存的设置数据
+const getSavedSettings = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/api/communication_config/fixed_capture'); // 请求后端接口
+    savedSettings.value = response.data.map(item => ({
+      enabled: true,
+      id: item.controller_id,
+      timeToNext: item.to_next_ws_offset,
+      sequenceCount: item.sequences_id.length,
+      sequenceIntervals: item.sequences_interval.join(', '),
+      cameraResetInterval: item.camera_reset_interval // 假设返回的数据中包含相机复位时间间隔字段
+    }));
+  } catch (error) {
+    console.error("Error fetching saved settings:", error);
+  }
+};
+
+// 在组件挂载时调用
+onMounted(() => {
+  getSavedSettings();
+});
 </script>
 
 <style>
@@ -150,11 +168,6 @@ const newControllers = ref([
   margin-right: 10px;
   padding: 5px 10px;
   cursor: pointer;
-}
-
-.toolbar select, .toolbar input {
-  margin-right: 10px;
-  padding: 5px;
 }
 
 .data-table {

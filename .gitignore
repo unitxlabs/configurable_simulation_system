@@ -9,3 +9,6 @@ node_modules/
 
 # To ignore environment-related files
 .env
+
+# To ignore python character codes.
+.pyc

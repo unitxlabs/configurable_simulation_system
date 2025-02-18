@@ -46,7 +46,6 @@
 
       <div v-if="activeTab === 'new'">
         <h2>新建设置</h2>
-        <input v-model="newSettingName" placeholder="新设置名" />
         <div class="toolbar">
           <button>应用</button>
           <button>取消</button>
@@ -84,7 +83,6 @@ import { ref } from 'vue';
 const activeTab = ref('saved');
 const searchQuery = ref('');
 const filterMaterial = ref('');
-const newSettingName = ref('');
 const savedSettings = ref([
   { enabled: true, id: '3232238091', timeToNext: '2000', sequenceCount: '3', sequenceIntervals: '30000, 50000' },
   { enabled: true, id: '3232238092', timeToNext: '2100', sequenceCount: '4', sequenceIntervals: '30000, 30000, 30000' }

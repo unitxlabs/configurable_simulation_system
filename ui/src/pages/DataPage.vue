@@ -1,19 +1,14 @@
 <template>
   <div class="app-container">
-
-    <!-- 主内容 -->
     <div class="content">
       <div class="search-bar">
-        <input type="text" placeholder="search" />
-        <input type="text" placeholder="CPU" />
-        <input type="text" placeholder="GPU" />
+        <input type="text" placeholder="🔍Search" v-model="searchQuery" />
+        <input type="text" placeholder="🔍CPU" v-model="cpuQuery" />
+        <input type="text" placeholder="🔍GPU" v-model="gpuQuery" />
       </div>
 
-      <!-- 操作按钮 -->
       <div class="actions">
-        <button>添加搜索项</button>
-        <button>数据查询</button>
-        <button>数据导出</button>
+        <button @click="searchData">数据查询</button>
       </div>
 
       <!-- 数据表格 -->
@@ -21,17 +16,18 @@
         <thead>
           <tr>
             <th>CPU</th>
-            <th>GPUs</th>
+            <th>GPU</th>
             <th>RAM</th>
-            <th>SSDs</th>
+            <th>SSD</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(entry, index) in dataEntries" :key="index">
+          <!-- 渲染数据 -->
+          <tr v-for="(entry, index) in filteredEntries" :key="index">
             <td>{{ entry.cpu }}</td>
-            <td>{{ entry.gpu }}</td>
+            <td>{{ entry.gpus.join(', ') }}</td> <!-- 将数组转换为逗号分隔的字符串 -->
             <td>{{ entry.ram }}</td>
-            <td>{{ entry.ssd }}</td>
+            <td>{{ entry.ssds.join(', ') }}</td> <!-- 将数组转换为逗号分隔的字符串 -->
           </tr>
         </tbody>
       </table>
@@ -40,69 +36,54 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 
-const dataEntries = ref([
-  {
-    cpu: '13th Gen Intel(R) Core(TM) i7-13700K',
-    gpu: 'NVIDIA GeForce RTX 4070 Ti 12282.0MB',
-    ram: 'DDR5 5600MT/s 32 GB',
-    ssd: 'Samsung SSD 870'
+const dataEntries = ref([]); // 定义一个响应式变量用于存储后端返回的数据
+const searchQuery = ref('');
+const cpuQuery = ref('');
+const gpuQuery = ref('');
+
+// 使用 fetch 获取数据
+onMounted(async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/config');
+    const data = await response.json(); // 解析 JSON 数据
+
+    // 将返回的数据转换为合适的格式
+    dataEntries.value = data.map(item => ({
+      cpu: item.cpu,
+      gpus: item.gpus,
+      ram: item.ram,
+      ssds: item.ssds
+    }));
+  } catch (error) {
+    console.error('Error fetching data:', error);
   }
-]);
+});
 
+// 计算属性：根据搜索条件过滤数据
+const filteredEntries = computed(() => {
+  return dataEntries.value.filter(entry => {
+    // 过滤条件：如果输入框中有内容，才做过滤
+    const matchesSearchQuery = entry.cpu.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      entry.gpus.some(gpu => gpu.toLowerCase().includes(gpuQuery.value.toLowerCase())) ||
+      entry.ram.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      entry.ssds.some(ssd => ssd.toLowerCase().includes(searchQuery.value.toLowerCase()));
+
+    const matchesCpuQuery = entry.cpu.toLowerCase().includes(cpuQuery.value.toLowerCase());
+    const matchesGpuQuery = entry.gpus.some(gpu => gpu.toLowerCase().includes(gpuQuery.value.toLowerCase()));
+
+    // 返回匹配的记录
+    return (matchesSearchQuery && matchesCpuQuery && matchesGpuQuery);
+  });
+});
+
+// 查询数据的函数
+const searchData = () => {
+  // 触发过滤逻辑，已通过计算属性自动处理
+};
 </script>
 
-<style>
-.app-container {
-  display: flex;
-  font-family: Arial, sans-serif;
-  height: 100vh;
-}
-
-.content {
-  flex: 1;
-  padding: 20px;
-}
-
-.search-bar {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.search-bar input {
-  padding: 5px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-button {
-  padding: 5px 10px;
-  font-size: 14px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #e0e0e0;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-  padding: 10px;
-  border: 1px solid #ccc;
-  text-align: left;
-}
+<style scoped>
+/* 样式保持不变 */
 </style>
-
