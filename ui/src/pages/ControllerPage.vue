@@ -49,7 +49,6 @@
       <!-- 新建设置选项卡 -->
       <div v-if="activeTab === 'new'">
         <h2>新建设置</h2>
-        <input v-model="newControllerName" placeholder="新设置名" />
         <div class="toolbar">
           <button @click="saveNewController">保存</button>
           <button>取消</button>
@@ -68,10 +67,10 @@
           <tbody>
             <tr v-for="(entry, index) in newControllers" :key="index">
               <td><input type="checkbox" v-model="entry.enabled" /></td>
-              <td>{{ entry.id }}</td>
-              <td>{{ entry.version }}</td>
-              <td>{{ entry.camera }}</td>
-              <td>{{ entry.resolution }}</td>
+              <td><input type="text" v-model="entry.id" placeholder="控制器ID" /></td>
+              <td><input type="text" v-model="entry.version" placeholder="控制器版本" /></td>
+              <td><input type="text" v-model="entry.camera" placeholder="连接的相机" /></td>
+              <td><input type="text" v-model="entry.resolution" placeholder="相机分辨率" /></td>
             </tr>
           </tbody>
         </table>

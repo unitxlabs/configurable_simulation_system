@@ -62,13 +62,13 @@ def controller_config_update_data_test():
 def workstation_config_add_data_test():
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
-        "workstation_id": 1,
-        "controller_config_id": 1,
+        "workstation_id": 2,
+        "controller_config_id": 10,
         "to_next_ws_offset": 2.1,
         "camera_reset_time": 1.7,
         "sequence_count": 3,
         "sequences_id": [0, 1, 2],
-        "sequences_interval": [10, 10, 10],
+        "sequences_interval": [100, 100, 100],
     }
     database_test.add_data(table_name="workstation_config", data_dict=test_data_dict)
 
@@ -258,7 +258,7 @@ if __name__ == "__main__":
 
     # controller_config_add_data_test()
 
-    # workstation_config_add_data_test()
+    workstation_config_add_data_test()
 
     # communication_config_add_data_test()
 

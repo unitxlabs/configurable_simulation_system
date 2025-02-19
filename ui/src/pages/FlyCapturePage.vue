@@ -1,6 +1,5 @@
 <template>
   <div class="app-container">
-
     <!-- 主内容 -->
     <div class="content">
       <div class="tabs">
@@ -47,9 +46,8 @@
       <div v-if="activeTab === 'new'">
         <h2>新建设置</h2>
         <div class="toolbar">
-          <button>应用</button>
+          <button @click="saveNewSetting">保存</button>
           <button>取消</button>
-          <button>保存</button>
           <button>删除</button>
         </div>
         <table class="data-table">
@@ -65,10 +63,17 @@
           <tbody>
             <tr v-for="(entry, index) in newSettings" :key="index">
               <td><input type="checkbox" v-model="entry.enabled" /></td>
-              <td>{{ entry.id }}</td>
-              <td>{{ entry.timeToNext }}</td>
-              <td>{{ entry.sequenceCount }}</td>
-              <td>{{ entry.sequenceIntervals }}</td>
+              <!-- 新建设置中的控制器ID下拉框 -->
+              <td>
+                <select v-model="entry.controller_id">  <!-- 注意绑定 controller_id -->
+                  <option v-for="controllerId in controllerIds" :key="controllerId" :value="controllerId">
+                    {{ controllerId }}
+                  </option>
+                </select>
+              </td>
+              <td><input type="text" v-model="entry.timeToNext" placeholder="到下一个工位的时间 (ms)" /></td>
+              <td><input type="text" v-model="entry.sequenceCount" placeholder="sequence的数量" /></td>
+              <td><input type="text" v-model="entry.sequenceIntervals" placeholder="sequence之间的时间间隔 (us)" /></td>
             </tr>
           </tbody>
         </table>
@@ -78,19 +83,84 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 
 const activeTab = ref('saved');
 const searchQuery = ref('');
 const filterMaterial = ref('');
-const savedSettings = ref([
-  { enabled: true, id: '3232238091', timeToNext: '2000', sequenceCount: '3', sequenceIntervals: '30000, 50000' },
-  { enabled: true, id: '3232238092', timeToNext: '2100', sequenceCount: '4', sequenceIntervals: '30000, 30000, 30000' }
-]);
+const savedSettings = ref([]);  // 从后端获取保存的设置
+
+// 新建设置示例
 const newSettings = ref([
-  { enabled: true, id: '3232238093', timeToNext: '1500', sequenceCount: '4', sequenceIntervals: '30000, 30000, 30000' },
-  { enabled: true, id: '3232238094', timeToNext: '1600', sequenceCount: '2', sequenceIntervals: '30000, 30000' }
+  { enabled: true, controller_id: '', timeToNext: '1500', sequenceCount: '4', sequenceIntervals: '30000, 30000, 30000' },
 ]);
+
+// 控制器ID列表，用于下拉菜单
+const controllerIds = ref([]);
+
+// 在组件挂载时请求数据
+onMounted(() => {
+  fetchSavedSettings();
+  fetchControllerIds();
+});
+
+// 获取保存的设置
+const fetchSavedSettings = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/api/communication_config/fly_capture');
+    if (response.data && Array.isArray(response.data)) {
+      savedSettings.value = response.data.map(item => ({
+        enabled: true,
+        id: item.controller_id || '',
+        timeToNext: item.to_next_ws_offset || '',
+        sequenceCount: item.sequences_id.length,
+        sequenceIntervals: item.sequences_interval.join(', '),
+      }));
+    }
+  } catch (error) {
+    console.error('Error fetching saved settings:', error);
+  }
+};
+
+// 获取控制器ID列表
+const fetchControllerIds = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/api/controller_config');
+    if (response.data && Array.isArray(response.data)) {
+      controllerIds.value = response.data.map(item => item.controller_id);
+    }
+  } catch (error) {
+    console.error('Error fetching controller IDs:', error);
+  }
+};
+
+const saveNewSetting = async () => {
+  const entry = newSettings.value[0]; // 假设我们只保存一个设置
+
+  // 直接使用用户在下拉框中选择的 controller_id
+  const workstationConfig = {
+    controller_id: String(entry.controller_id),  // 确保传递字符串
+    to_next_ws_offset: entry.timeToNext,
+    sequence_count: entry.sequenceCount,
+    sequences_interval: entry.sequenceIntervals.split(',').map(interval => parseInt(interval.trim())),
+  };
+
+  try {
+    const insertResponse = await axios.post('http://localhost:5000/api/workstation_config/fly_capture', workstationConfig);
+
+    if (insertResponse.status === 200) {
+      // 成功后弹出提示
+      alert('新设置保存成功！');
+      // 如果需要刷新页面或重载数据，可以在这里调用相应方法
+      fetchSavedSettings();  // 重新加载保存的设置
+    }
+  } catch (error) {
+    console.error('Error saving new setting:', error);
+    alert('保存设置失败，请重试。');
+  }
+};
+
 </script>
 
 <style>
@@ -159,6 +229,11 @@ const newSettings = ref([
 
 input[type="text"] {
   margin-bottom: 10px;
+  padding: 5px;
+  width: 200px;
+}
+
+select {
   padding: 5px;
   width: 200px;
 }

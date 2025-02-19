@@ -214,5 +214,204 @@ def get_fixed_capture_config():
         if connection:
             connection.close()
 
+
+# 5. 飞拍通讯方式接口
+@app.route('/api/communication_config/fly_capture', methods=['GET'])
+def get_fly_capture_config():
+    connection = None
+    cursor = None
+
+    try:
+        # 使用 db_config 连接数据库
+        connection = psycopg2.connect(**db_config)
+        cursor = connection.cursor()
+
+        # 第一步: 获取 communication_type=1 的 workstation_config_ids
+        cursor.execute("""
+            SELECT workstation_config_ids
+            FROM communication_config
+            WHERE communication_type = 1
+        """)
+        workstation_config_ids = cursor.fetchone()
+
+        if workstation_config_ids:
+            workstation_config_ids = workstation_config_ids[0]  # 获取 int4[] 数组
+
+            # 第二步: 根据 workstation_config_ids 查询 workstation_config 中的数据
+            cursor.execute("""
+                SELECT controller_config_id, to_next_ws_offset, sequences_id, sequences_interval
+                FROM workstation_config
+                WHERE id = ANY(%s)
+            """, (workstation_config_ids,))
+
+            result = cursor.fetchall()
+
+            if result:
+                data = []
+
+                # 根据 controller_config_id 从 controller_config 表获取 controller_id
+                for row in result:
+                    controller_config_id = row[0]
+                    cursor.execute("""
+                        SELECT controller_id
+                        FROM controller_config
+                        WHERE id = %s
+                    """, (controller_config_id,))
+
+                    controller_result = cursor.fetchone()
+
+                    controller_id = controller_result[0] if controller_result else None
+
+                    # 组装返回的数据
+                    data.append({
+                        'controller_config_id': controller_config_id,
+                        'controller_id': controller_id,  # 返回controller_id
+                        'to_next_ws_offset': row[1],
+                        'sequences_id': row[2],
+                        'sequences_interval': row[3],
+                    })
+
+                return jsonify(data)  # 返回数据
+            else:
+                return jsonify({"error": "No matching data found in workstation_config"}), 404
+        else:
+            return jsonify({"error": "No workstation_config_ids found in communication_config"}), 404
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+# 6. 飞拍工作站配置接口
+@app.route('/api/workstation_config/fly_capture', methods=['POST'])
+def add_workstation_config_fly_capture():
+    new_configs = request.get_json()
+    connection = None
+    cursor = None
+
+    try:
+        connection = psycopg2.connect(**db_config)
+        cursor = connection.cursor()
+
+        # 获取 controller_id
+        controller_id = new_configs['controller_id']
+
+        # 根据 controller_id 获取 controller_config 的 id
+        cursor.execute("""
+            SELECT id
+            FROM controller_config
+            WHERE controller_id = %s
+        """, (controller_id,))
+
+        controller_config_result = cursor.fetchone()
+
+        if controller_config_result:
+            controller_config_id = controller_config_result[0]
+            print(controller_config_id)
+            # 插入到 workstation_config 表
+            cursor.execute("""
+                INSERT INTO workstation_config (
+                    workstation_id,
+                    controller_config_id, 
+                    to_next_ws_offset, 
+                    camera_reset_time,
+                    sequence_count,
+                    sequences_id, 
+                    sequences_interval,
+                    create_time,
+                    modified_time
+                ) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            """, (
+                9,
+                controller_config_id,  # 已获取的 controller_config_id
+                int(new_configs['to_next_ws_offset']),
+                3,  # 这里你设置 camera_reset_time 为 3，如果有不同的要求请修改
+                len(new_configs['sequences_interval']),
+                [int(new_configs['sequence_count'])],  # 将 sequence_count 作为 sequences_id
+                new_configs['sequences_interval']  # 处理为数组存储
+            ))
+
+        connection.commit()
+        return jsonify({"message": "Workstation config inserted successfully"}), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+# 7. 定拍工作站配置接口
+@app.route('/api/workstation_config/fixed_capture', methods=['POST'])
+def add_workstation_config_fixed_capture():
+    new_configs = request.get_json()
+    connection = None
+    cursor = None
+
+    try:
+        connection = psycopg2.connect(**db_config)
+        cursor = connection.cursor()
+
+        # 获取 controller_id
+        controller_id = new_configs['controller_id']
+
+        # 根据 controller_id 获取 controller_config 的 id
+        cursor.execute("""
+            SELECT id
+            FROM controller_config
+            WHERE controller_id = %s
+        """, (controller_id,))
+
+        controller_config_result = cursor.fetchone()
+
+        if controller_config_result:
+            controller_config_id = controller_config_result[0]
+            print(controller_config_id)
+            # 插入到 workstation_config 表
+            cursor.execute("""
+                INSERT INTO workstation_config (
+                    workstation_id,
+                    controller_config_id, 
+                    to_next_ws_offset, 
+                    camera_reset_time,
+                    sequence_count,
+                    sequences_id, 
+                    sequences_interval,
+                    create_time,
+                    modified_time
+                ) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            """, (
+                9,
+                controller_config_id,  # 已获取的 controller_config_id
+                int(new_configs['to_next_ws_offset']),
+                int(new_configs['camera_reset_interval']),
+                len(new_configs['sequences_interval']),
+                [int(new_configs['sequence_count'])],  # 将 sequence_count 作为 sequences_id
+                new_configs['sequences_interval']  # 处理为数组存储
+            ))
+
+        connection.commit()
+        return jsonify({"message": "Workstation config inserted successfully"}), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
