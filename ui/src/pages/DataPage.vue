@@ -9,6 +9,7 @@
 
       <div class="actions">
         <button @click="searchData">数据查询</button>
+        <button @click="exportToCSV">导出数据库数据</button> <!-- 修改导出按钮的文本 -->
       </div>
 
       <!-- 数据表格 -->
@@ -81,6 +82,34 @@ const filteredEntries = computed(() => {
 // 查询数据的函数
 const searchData = () => {
   // 触发过滤逻辑，已通过计算属性自动处理
+};
+
+// 导出数据库表数据的函数
+const exportToCSV = async () => {
+  try {
+    // 发送请求到后端导出数据
+    const response = await fetch('http://localhost:5000/api/export_simulation_result', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    // 判断请求是否成功
+    if (!response.ok) {
+      throw new Error('导出数据失败');
+    }
+
+    // 创建一个临时的下载链接
+    const blob = await response.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'simulation_result.csv'; // 设置下载文件名
+    link.click(); // 触发下载
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    alert('导出数据失败，请重试。');
+  }
 };
 </script>
 

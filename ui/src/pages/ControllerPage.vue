@@ -54,6 +54,8 @@
           <button>取消</button>
           <button>删除</button>
         </div>
+        <button @click="addNewRow">添加一行</button> <!-- 添加一行按钮 -->
+        <button @click="deleteLastRow">删除最下面一行</button> <!-- 删除最下面一行按钮 -->
         <table class="data-table">
           <thead>
             <tr>
@@ -67,10 +69,16 @@
           <tbody>
             <tr v-for="(entry, index) in newControllers" :key="index">
               <td><input type="checkbox" v-model="entry.enabled" /></td>
-              <td><input type="text" v-model="entry.id" placeholder="控制器ID" /></td>
-              <td><input type="text" v-model="entry.version" placeholder="控制器版本" /></td>
-              <td><input type="text" v-model="entry.camera" placeholder="连接的相机" /></td>
-              <td><input type="text" v-model="entry.resolution" placeholder="相机分辨率" /></td>
+              <td><input type="text" v-model="entry.id" placeholder="控制器ID" :disabled="!entry.enabled" /></td>
+              <td>
+                <select v-model="entry.version" :disabled="!entry.enabled">
+                  <option value="V4">V4</option>
+                  <option value="V5">V5</option>
+                  <option value="V6">V6</option>
+                </select>
+              </td>
+              <td><input type="text" v-model="entry.camera" placeholder="连接的相机" :disabled="!entry.enabled" /></td>
+              <td><input type="text" v-model="entry.resolution" placeholder="相机分辨率" :disabled="!entry.enabled" /></td>
             </tr>
           </tbody>
         </table>
@@ -86,11 +94,11 @@ const activeTab = ref('saved');
 const searchName = ref('');
 const searchID = ref('');
 const searchResolution = ref('');
-const newControllerName = ref('');
 const controllerConfig = ref([]);  // 保存从后端获取的控制器配置数据
+
+// 默认初始化一行新数据
 const newControllers = ref([
-  { enabled: true, id: '3232238088', version: 'V4', camera: 'L38458167', resolution: '2448*2048' },
-  { enabled: true, id: '3232238089', version: 'V5', camera: 'L38458223', resolution: '2448*2048' }
+  { enabled: false, id: '', version: 'V4', camera: '', resolution: '' }  // 默认版本为V4
 ]);
 
 // 获取控制器配置数据
@@ -128,15 +136,27 @@ const filteredControllers = computed(() => {
 
 // 保存新控制器数据到数据库
 const saveNewController = async () => {
-  const newControllerData = newControllers.value.map(entry => ({
-    controller_name: newControllerName.value,
-    enabled: entry.enabled,
-    controller_id: entry.id,
-    controller_version: entry.version,
-    cameras_id: [entry.camera],  // 这里假设只有一个相机
-    image_width: entry.resolution.split('*')[0],  // 分辨率宽度
-    image_height: entry.resolution.split('*')[1]  // 分辨率高度
-  }));
+  // 验证相机分辨率格式
+  const resolutionPattern = /^\d+\*\d+$/;  // 正则表达式，要求格式为数字*数字
+  for (const entry of newControllers.value) {
+    if (entry.enabled && !resolutionPattern.test(entry.resolution)) {
+      alert('相机分辨率格式不正确！必须是数字*数字的形式');
+      return; // 如果不符合格式，则不保存并提示用户
+    }
+  }
+
+  // 过滤启用的控制器数据
+  const newControllerData = newControllers.value
+    .filter(entry => entry.enabled) // 只提交启用的控制器
+    .map(entry => ({
+      controller_name: entry.id,
+      enabled: entry.enabled,
+      controller_id: entry.id,
+      controller_version: entry.version,
+      cameras_id: [entry.camera],  // 这里假设只有一个相机
+      image_width: entry.resolution.split('*')[0],  // 分辨率宽度
+      image_height: entry.resolution.split('*')[1]  // 分辨率高度
+    }));
 
   try {
     const response = await fetch('http://localhost:5000/api/controller_config', {
@@ -154,6 +174,20 @@ const saveNewController = async () => {
     }
   } catch (error) {
     console.error('Error saving new controller:', error);
+  }
+};
+
+// 添加一行新数据
+const addNewRow = () => {
+  newControllers.value.push({ enabled: false, id: '', version: 'V4', camera: '', resolution: '' });
+};
+
+// 删除最下面一行
+const deleteLastRow = () => {
+  if (newControllers.value.length > 1) {
+    newControllers.value.pop(); // 删除数组中的最后一项
+  } else {
+    alert('至少保留一行数据'); // 至少保留一行数据
   }
 };
 </script>
@@ -215,5 +249,10 @@ input[type="text"] {
   margin-bottom: 10px;
   padding: 5px;
   width: 200px;
+}
+
+select {
+  margin-bottom: 10px;
+  padding: 5px;
 }
 </style>

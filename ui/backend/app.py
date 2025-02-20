@@ -1,6 +1,8 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import psycopg2
 from flask_cors import CORS
+import io
+import csv
 
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求，方便前端访问
@@ -291,118 +293,250 @@ def get_fly_capture_config():
 # 6. 飞拍工作站配置接口
 @app.route('/api/workstation_config/fly_capture', methods=['POST'])
 def add_workstation_config_fly_capture():
-    new_configs = request.get_json()
+    data = request.get_json()  # 从前端获取数据
+    workstation_configs = data['workstation_configs']  # 提取 workstation_config 数据
+    communication_config = data['communication_config']  # 提取 communication_config 数据
     connection = None
     cursor = None
 
     try:
+        # 连接数据库
         connection = psycopg2.connect(**db_config)
         cursor = connection.cursor()
 
-        # 获取 controller_id
-        controller_id = new_configs['controller_id']
+        # 开始事务
+        connection.autocommit = False  # 关闭自动提交，手动控制事务提交
 
-        # 根据 controller_id 获取 controller_config 的 id
-        cursor.execute("""
-            SELECT id
-            FROM controller_config
-            WHERE controller_id = %s
-        """, (controller_id,))
-
-        controller_config_result = cursor.fetchone()
-
-        if controller_config_result:
-            controller_config_id = controller_config_result[0]
-            print(controller_config_id)
-            # 插入到 workstation_config 表
+        controller_ids = []
+        # 插入 workstation_config 数据
+        for config in workstation_configs:
+            controller_id = config['controller_id']
+            # 获取 controller_id 对应的 controller_config_id
             cursor.execute("""
-                INSERT INTO workstation_config (
-                    workstation_id,
-                    controller_config_id, 
-                    to_next_ws_offset, 
-                    camera_reset_time,
-                    sequence_count,
-                    sequences_id, 
-                    sequences_interval,
-                    create_time,
-                    modified_time
-                ) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-            """, (
-                9,
-                controller_config_id,  # 已获取的 controller_config_id
-                int(new_configs['to_next_ws_offset']),
-                3,  # 这里你设置 camera_reset_time 为 3，如果有不同的要求请修改
-                len(new_configs['sequences_interval']),
-                [int(new_configs['sequence_count'])],  # 将 sequence_count 作为 sequences_id
-                new_configs['sequences_interval']  # 处理为数组存储
-            ))
+                SELECT id
+                FROM controller_config
+                WHERE controller_id = %s
+            """, (controller_id,))
 
+            controller_config_result = cursor.fetchone()
+
+            if controller_config_result:
+                controller_config_id = controller_config_result[0]
+                print(controller_config_id)
+                # 插入到 workstation_config 表
+                cursor.execute("""
+                    INSERT INTO workstation_config (
+                        workstation_id,
+                        controller_config_id, 
+                        to_next_ws_offset, 
+                        camera_reset_time,
+                        sequence_count,
+                        sequences_id, 
+                        sequences_interval,
+                        create_time,
+                        modified_time
+                    ) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                """, (
+                    6,  # workstation_id
+                    controller_config_id,  # 已获取的 controller_config_id
+                    int(config['to_next_ws_offset']),
+                    0,  # camera_reset_time 设置为 0
+                    len(config['sequences_interval']),
+                    [int(config['sequence_count'])],  # 将 sequence_count 作为 sequences_id
+                    config['sequences_interval']  # sequences_interval 数组
+                ))
+                controller_ids.append(controller_config_id)  # 收集 controller_config_id
+
+        # 获取前端传递的 workstation_in_use 布尔数组
+        workstation_in_use = communication_config['workstations_in_use']  # 获取前端传递的布尔数组
+
+        # 向 communication_config 插入数据
+        workstation_count = len(controller_ids)
+        cursor.execute("""
+            INSERT INTO communication_config (
+                part_type, 
+                part_interval, 
+                communication_type, 
+                communication_step, 
+                workstation_count, 
+                workstation_config_ids, 
+                workstations_in_use, 
+                create_time, 
+                modified_time
+            ) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+        """, (
+            communication_config['part_type'],
+            communication_config['part_interval'],
+            communication_config['communication_type'],
+            communication_config['communication_step'],
+            workstation_count,
+            controller_ids,  # 控制器 ID 列表
+            workstation_in_use,  # 将前端传递的布尔数组插入
+        ))
+
+        # 提交事务，只有当两者都成功时才提交
         connection.commit()
-        return jsonify({"message": "Workstation config inserted successfully"}), 200
+
+        return jsonify({"message": "Workstation config and communication config inserted successfully"}), 200
 
     except Exception as e:
+        # 如果有任何错误发生，回滚事务
         print(f"Error: {e}")
+        if connection:
+            connection.rollback()  # 回滚事务
         return jsonify({"error": str(e)}), 500
 
     finally:
+        # 确保关闭数据库连接和游标
         if cursor:
             cursor.close()
         if connection:
             connection.close()
+
 
 # 7. 定拍工作站配置接口
 @app.route('/api/workstation_config/fixed_capture', methods=['POST'])
 def add_workstation_config_fixed_capture():
-    new_configs = request.get_json()
+    data = request.get_json()  # 从前端获取数据
+    workstation_configs = data['workstation_configs']  # 提取 workstation_config 数据
+    communication_config = data['communication_config']  # 提取 communication_config 数据
     connection = None
     cursor = None
 
     try:
+        # 连接数据库
         connection = psycopg2.connect(**db_config)
         cursor = connection.cursor()
 
-        # 获取 controller_id
-        controller_id = new_configs['controller_id']
+        # 开始事务
+        connection.autocommit = False  # 关闭自动提交，手动控制事务提交
 
-        # 根据 controller_id 获取 controller_config 的 id
-        cursor.execute("""
-            SELECT id
-            FROM controller_config
-            WHERE controller_id = %s
-        """, (controller_id,))
-
-        controller_config_result = cursor.fetchone()
-
-        if controller_config_result:
-            controller_config_id = controller_config_result[0]
-            print(controller_config_id)
-            # 插入到 workstation_config 表
+        controller_ids = []
+        # 插入 workstation_config 数据
+        for config in workstation_configs:
+            controller_id = config['controller_id']
+            # 获取 controller_id 对应的 controller_config_id
             cursor.execute("""
-                INSERT INTO workstation_config (
-                    workstation_id,
-                    controller_config_id, 
-                    to_next_ws_offset, 
-                    camera_reset_time,
-                    sequence_count,
-                    sequences_id, 
-                    sequences_interval,
-                    create_time,
-                    modified_time
-                ) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-            """, (
-                9,
-                controller_config_id,  # 已获取的 controller_config_id
-                int(new_configs['to_next_ws_offset']),
-                int(new_configs['camera_reset_interval']),
-                len(new_configs['sequences_interval']),
-                [int(new_configs['sequence_count'])],  # 将 sequence_count 作为 sequences_id
-                new_configs['sequences_interval']  # 处理为数组存储
-            ))
+                SELECT id
+                FROM controller_config
+                WHERE controller_id = %s
+            """, (controller_id,))
 
+            controller_config_result = cursor.fetchone()
+
+            if controller_config_result:
+                controller_config_id = controller_config_result[0]
+                # 插入到 workstation_config 表
+                cursor.execute("""
+                    INSERT INTO workstation_config (
+                        workstation_id,
+                        controller_config_id, 
+                        to_next_ws_offset, 
+                        camera_reset_time,
+                        sequence_count,
+                        sequences_id, 
+                        sequences_interval,
+                        create_time,
+                        modified_time
+                    ) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                """, (
+                    6,  # workstation_id
+                    controller_config_id,  # 已获取的 controller_config_id
+                    int(config['to_next_ws_offset']),
+                    int(config['camera_reset_interval']),  # 使用传递的 camera_reset_interval
+                    len(config['sequences_interval']),
+                    [int(config['sequence_count'])],  # 将 sequence_count 作为 sequences_id
+                    config['sequences_interval']  # sequences_interval 数组
+                ))
+                controller_ids.append(controller_config_id)  # 收集 controller_config_id
+
+        # 获取前端传递的 workstation_in_use 布尔数组
+        workstation_in_use = communication_config['workstations_in_use']  # 获取前端传递的布尔数组
+
+        # 向 communication_config 插入数据
+        workstation_count = len(controller_ids)
+        cursor.execute("""
+            INSERT INTO communication_config (
+                part_type, 
+                part_interval, 
+                communication_type, 
+                communication_step, 
+                workstation_count, 
+                workstation_config_ids, 
+                workstations_in_use, 
+                create_time, 
+                modified_time
+            ) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+        """, (
+            communication_config['part_type'],
+            communication_config['part_interval'],
+            communication_config['communication_type'],
+            communication_config['communication_step'],
+            workstation_count,
+            controller_ids,  # 控制器 ID 列表
+            workstation_in_use,  # 将前端传递的布尔数组插入
+        ))
+
+        # 提交事务，只有当两者都成功时才提交
         connection.commit()
-        return jsonify({"message": "Workstation config inserted successfully"}), 200
+
+        return jsonify({"message": "Workstation config and communication config inserted successfully"}), 200
+
+    except Exception as e:
+        # 如果有任何错误发生，回滚事务
+        print(f"Error: {e}")
+        if connection:
+            connection.rollback()  # 回滚事务
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        # 确保关闭数据库连接和游标
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+# 8. 导出 simulation_result 表数据为 CSV 的接口
+@app.route('/api/export_simulation_result', methods=['GET'])
+def export_simulation_result():
+    connection = None
+    cursor = None
+
+    try:
+        # 使用 db_config 连接数据库
+        connection = psycopg2.connect(**db_config)
+        cursor = connection.cursor()
+
+        # 查询 simulation_result 表中的所有数据
+        cursor.execute("SELECT * FROM simulation_result")
+        rows = cursor.fetchall()
+
+        # 获取列名作为 CSV 的表头
+        colnames = [desc[0] for desc in cursor.description]
+
+        # 使用 io.BytesIO 创建一个内存中的文件对象（以二进制模式）
+        output = io.StringIO()  # 使用 StringIO，因为我们会写入字符串数据
+        csv_writer = csv.writer(output)
+
+        # 写入表头
+        csv_writer.writerow(colnames)
+
+        # 写入数据行
+        csv_writer.writerows(rows)
+
+        # 将游标位置移动到文件开始处
+        output.seek(0)
+
+        # 将内容转换为字节流，确保编码为 UTF-8
+        output_data = output.getvalue().encode('utf-8')
+
+        # 使用 send_file 返回文件，设置 MIME 类型为 CSV
+        return send_file(io.BytesIO(output_data), mimetype='text/csv', as_attachment=True, download_name="simulation_result.csv")
 
     except Exception as e:
         print(f"Error: {e}")
@@ -413,5 +547,7 @@ def add_workstation_config_fixed_capture():
             cursor.close()
         if connection:
             connection.close()
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
