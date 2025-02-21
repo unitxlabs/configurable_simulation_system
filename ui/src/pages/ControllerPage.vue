@@ -3,19 +3,30 @@
     <!-- 主内容 -->
     <div class="content">
       <div class="tabs">
-        <button @click="activeTab = 'saved'" :class="{ active: activeTab === 'saved' }">保存的设置</button>
-        <button @click="activeTab = 'new'" :class="{ active: activeTab === 'new' }">新建设置</button>
+        <button
+          @click="activeTab = 'saved'"
+          :class="{ active: activeTab === 'saved' }"
+          class="tab-button"
+        >
+          保存的设置
+        </button>
+        <button
+          @click="activeTab = 'new'"
+          :class="{ active: activeTab === 'new' }"
+          class="tab-button"
+        >
+          新建设置
+        </button>
       </div>
 
       <!-- 保存的设置选项卡 -->
-      <div v-if="activeTab === 'saved'">
+      <div v-if="activeTab === 'saved'" class="tab-content">
+        <div v-if="activeTab === 'saved'" class="tab-frame"></div>
         <h2>保存的设置</h2>
         <div class="search-bar">
-          <input v-model="searchName" placeholder="🔍控制器ID" />
-          <input v-model="searchID" placeholder="🔍控制器版本" />
-          <input v-model="searchResolution" placeholder="🔍相机分辨率" />
-          <button @click="searchConfig">搜索</button>
-          <button>新建</button>
+          <input v-model="searchName" placeholder="🔍 控制器ID" />
+          <input v-model="searchID" placeholder="🔍 控制器版本" />
+          <input v-model="searchResolution" placeholder="🔍 相机分辨率" />
         </div>
         <div class="toolbar">
           <button>应用</button>
@@ -35,7 +46,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, index) in filteredControllers" :key="index">
+            <tr v-for="(entry, index) in filteredControllers" :key="index" :class="{'odd-row': index % 2 === 0, 'even-row': index % 2 !== 0}">
               <td><input type="checkbox" v-model="entry.enabled" /></td>
               <td>{{ entry.controller_id }}</td>
               <td>{{ entry.controller_version }}</td>
@@ -47,15 +58,14 @@
       </div>
 
       <!-- 新建设置选项卡 -->
-      <div v-if="activeTab === 'new'">
+      <div v-if="activeTab === 'new'" class="tab-content">
+        <div v-if="activeTab === 'new'" class="tab-frame"></div>
         <h2>新建设置</h2>
         <div class="toolbar">
           <button @click="saveNewController">保存</button>
-          <button>取消</button>
-          <button>删除</button>
+          <button @click="addNewRow">添加一行</button> <!-- 添加一行按钮 -->
+          <button @click="deleteLastRow">删除最下面一行</button> <!-- 删除最下面一行按钮 -->
         </div>
-        <button @click="addNewRow">添加一行</button> <!-- 添加一行按钮 -->
-        <button @click="deleteLastRow">删除最下面一行</button> <!-- 删除最下面一行按钮 -->
         <table class="data-table">
           <thead>
             <tr>
@@ -67,7 +77,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, index) in newControllers" :key="index">
+            <tr v-for="(entry, index) in newControllers" :key="index" :class="{'odd-row': index % 2 === 0, 'even-row': index % 2 !== 0}">
               <td><input type="checkbox" v-model="entry.enabled" /></td>
               <td><input type="text" v-model="entry.id" placeholder="控制器ID" :disabled="!entry.enabled" /></td>
               <td>
@@ -94,11 +104,11 @@ const activeTab = ref('saved');
 const searchName = ref('');
 const searchID = ref('');
 const searchResolution = ref('');
-const controllerConfig = ref([]);  // 保存从后端获取的控制器配置数据
+const controllerConfig = ref([]);
 
 // 默认初始化一行新数据
 const newControllers = ref([
-  { enabled: false, id: '', version: 'V4', camera: '', resolution: '' }  // 默认版本为V4
+  { enabled: false, id: '', version: 'V4', camera: '', resolution: '' }
 ]);
 
 // 获取控制器配置数据
@@ -136,26 +146,24 @@ const filteredControllers = computed(() => {
 
 // 保存新控制器数据到数据库
 const saveNewController = async () => {
-  // 验证相机分辨率格式
-  const resolutionPattern = /^\d+\*\d+$/;  // 正则表达式，要求格式为数字*数字
+  const resolutionPattern = /^\d+\*\d+$/;
   for (const entry of newControllers.value) {
     if (entry.enabled && !resolutionPattern.test(entry.resolution)) {
       alert('相机分辨率格式不正确！必须是数字*数字的形式');
-      return; // 如果不符合格式，则不保存并提示用户
+      return;
     }
   }
 
-  // 过滤启用的控制器数据
   const newControllerData = newControllers.value
-    .filter(entry => entry.enabled) // 只提交启用的控制器
+    .filter(entry => entry.enabled)
     .map(entry => ({
       controller_name: entry.id,
       enabled: entry.enabled,
       controller_id: entry.id,
       controller_version: entry.version,
-      cameras_id: [entry.camera],  // 这里假设只有一个相机
-      image_width: entry.resolution.split('*')[0],  // 分辨率宽度
-      image_height: entry.resolution.split('*')[1]  // 分辨率高度
+      cameras_id: [entry.camera],
+      image_width: entry.resolution.split('*')[0],
+      image_height: entry.resolution.split('*')[1]
     }));
 
   try {
@@ -185,15 +193,14 @@ const addNewRow = () => {
 // 删除最下面一行
 const deleteLastRow = () => {
   if (newControllers.value.length > 1) {
-    newControllers.value.pop(); // 删除数组中的最后一项
+    newControllers.value.pop();
   } else {
-    alert('至少保留一行数据'); // 至少保留一行数据
+    alert('至少保留一行数据');
   }
 };
 </script>
 
 <style scoped>
-/* 样式可以根据需要进行调整 */
 .app-container {
   font-family: Arial, sans-serif;
   padding: 20px;
@@ -201,36 +208,79 @@ const deleteLastRow = () => {
 
 .tabs {
   margin-bottom: 20px;
+  display: flex;
 }
 
-.tabs button {
-  padding: 10px;
+.tab-button {
+  padding: 10px 20px;
   margin-right: 10px;
   cursor: pointer;
-}
-
-.tabs .active {
-  background-color: #007bff;
+  background-color: #4d4d4d; /* 深灰色 */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   color: white;
 }
 
-.toolbar {
-  margin-bottom: 10px;
+.tab-button.active {
+  background-color: #333; /* 深灰色激活状态 */
+  color: white;
+  border: 1px solid #4d4d4d;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.toolbar button {
-  margin-right: 10px;
-  padding: 5px 10px;
-  cursor: pointer;
+.tab-button:hover {
+  background-color: #333; /* 深灰色按钮悬停效果 */
 }
 
-.search-bar {
-  margin-bottom: 10px;
+.tab-content {
+  position: relative;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+}
+
+.tab-frame {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border: 3px solid #4d4d4d; /* 蓝色边框 */
+  border-radius: 10px;
+  pointer-events: none; /* 允许点击通过框架 */
+  transition: all 0.3s ease;
+  opacity: 0; /* 初始为透明 */
+}
+
+.tab-content.active .tab-frame {
+  opacity: 1; /* 当tab是active时，显示框架 */
 }
 
 .search-bar input {
-  margin-right: 5px;
-  padding: 5px;
+  padding: 8px;
+  margin-right: 10px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.toolbar button {
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.toolbar button:hover {
+  background-color: #4d4d4d;
 }
 
 .data-table {
@@ -241,18 +291,59 @@ const deleteLastRow = () => {
 
 .data-table th, .data-table td {
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   text-align: left;
 }
 
-input[type="text"] {
-  margin-bottom: 10px;
-  padding: 5px;
-  width: 200px;
+.data-table th {
+  background-color: #333; /* 表头深灰色 */
+  color: white; /* 白色字体 */
 }
 
-select {
-  margin-bottom: 10px;
-  padding: 5px;
+.data-table .odd-row {
+  background-color: white; /* 奇数行白色 */
+}
+
+.data-table .even-row {
+  background-color: #f0f0f0; /* 偶数行浅灰色 */
+}
+
+/* 鼠标悬停时的效果 */
+.data-table tr:hover {
+  background-color: #ddd;
+}
+
+input[type="text"], select {
+  padding: 8px 12px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.tab-content .tab-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid #007bff;
+  border-radius: 10px;
+  pointer-events: none; /* To allow clicking through the frame */
+  transition: all 0.3s ease;
+}
+
+.tab-content.active .tab-frame {
+  opacity: 1;
 }
 </style>

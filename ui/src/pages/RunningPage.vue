@@ -1,6 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- 主内容 -->
     <div class="content">
       <div class="tabs">
         <button :class="{ active: activeTab === '设置' }" @click="switchTab('设置')">设置</button>
@@ -8,7 +7,7 @@
       </div>
 
       <!-- 设置内容 -->
-      <div v-if="activeTab === '设置'">
+      <div v-if="activeTab === '设置'" class="tab-content">
         <h2>控制器设置</h2>
         <table class="data-table">
           <thead>
@@ -55,7 +54,7 @@
       </div>
 
       <!-- 运行内容 -->
-      <div v-if="activeTab === '运行'">
+      <div v-if="activeTab === '运行'" class="tab-content">
         <div class="charts">
           <div class="chart" ref="lineChart"></div>
           <div class="chart" ref="pieChart"></div>
@@ -147,7 +146,7 @@ onMounted(() => {
 });
 </script>
 
-<style>
+<style scoped>
 .app-container {
   display: flex;
   font-family: Arial, sans-serif;
@@ -179,15 +178,40 @@ onMounted(() => {
   padding: 20px;
 }
 
-.tabs button {
-  padding: 10px;
-  margin-right: 10px;
-  cursor: pointer;
+.tabs {
+  margin-bottom: 20px;
+  display: flex;
 }
 
-.tabs button.active {
-  background-color: #007bff;
+.tabs button {
+  padding: 10px 20px;  /* 增加了水平和垂直的间距，提升点击区域 */
+  margin-right: 10px;
+  cursor: pointer;
+  background-color: #4d4d4d;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   color: white;
+}
+
+.tabs .active {
+  background-color: #333;
+  color: white;
+  border: 1px solid #4d4d4d;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.tabs button:hover {
+  background-color: #333;
+}
+
+/* 为选项卡内容区域加上边框 */
+.tab-content {
+  border: 2px solid #ccc;  /* 内容区域的边框 */
+  border-radius: 5px;
+  padding: 20px;  /* 给内容区域加一些内边距 */
+  margin-top: 10px;
 }
 
 .charts {
@@ -207,9 +231,67 @@ onMounted(() => {
   margin-top: 20px;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   text-align: left;
+}
+
+.data-table th {
+  background-color: #333;
+  color: white;
+}
+
+.data-table tr:nth-child(odd) {
+  background-color: #fff; /* 奇数行背景色 */
+}
+
+.data-table tr:nth-child(even) {
+  background-color: #f7f7f7; /* 偶数行背景色为浅灰色 */
+}
+
+.data-table tr:hover {
+  background-color: #ddd;
+}
+
+input[type="text"], select {
+  padding: 8px 12px;  /* 调整为与第一段输入框一致的高度 */
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;  /* 确保字体大小一致 */
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+input[type="checkbox"] {
+  margin: 0;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+button {
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #4d4d4d;
 }
 </style>

@@ -7,16 +7,14 @@
       </div>
 
       <!-- 保存的设置 -->
-      <div v-if="activeTab === 'saved'">
+      <div v-if="activeTab === 'saved'" class="tab-content">
         <h2>保存的设置（飞拍）</h2>
-
-        <div class="filters">
+        <div class="search-bar">
           <input type="text" v-model="filterId" placeholder="🔍控制器ID" />
           <input type="text" v-model="filterTimeToNext" placeholder="🔍到下一个工位的时间 (ms)" />
           <input type="text" v-model="filterSequenceCount" placeholder="🔍sequence的数量" />
           <input type="text" v-model="filterSequenceIntervals" placeholder="🔍sequence之间的时间间隔 (us)" />
         </div>
-
         <table class="data-table">
           <thead>
             <tr>
@@ -40,11 +38,11 @@
       </div>
 
       <!-- 新建设置 -->
-      <div v-if="activeTab === 'new'">
+      <div v-if="activeTab === 'new'" class="tab-content">
         <h2>新建设置（飞拍）</h2>
         <div class="toolbar">
           <button @click="saveNewSetting">保存</button>
-          <button>取消</button>
+          <button @click="cancelNewSetting">取消</button>
           <button>删除</button>
         </div>
         <table class="data-table">
@@ -60,7 +58,7 @@
           <tbody>
             <tr v-for="(entry, index) in newSettings" :key="index">
               <td><input type="checkbox" v-model="entry.enabled" /></td>
-              <td>{{ entry.controller_id }}</td> <!-- 控制器ID直接显示 -->
+              <td>{{ entry.controller_id }}</td>
               <td><input type="text" v-model="entry.timeToNext" placeholder="到下一个工位的时间 (ms)" :disabled="!entry.enabled" /></td>
               <td><input type="text" v-model="entry.sequenceCount" placeholder="sequence的数量" :disabled="!entry.enabled"/></td>
               <td><input type="text" v-model="entry.sequenceIntervals" placeholder="sequence之间的时间间隔 (us)" :disabled="!entry.enabled"/></td>
@@ -146,6 +144,13 @@ const fetchControllerIds = async () => {
 
 const saveNewSetting = async () => {
   try {
+    // 如果没有任何一行被选中，弹出错误并阻止保存
+    const anyEnabled = newSettings.value.some(entry => entry.enabled);
+    if (!anyEnabled) {
+      alert('至少选择一项进行保存！');
+      return;
+    }
+
     // 过滤出已勾选的行
     const settingsToSave = newSettings.value
       .filter((entry) => entry.enabled)  // 只处理 enabled 为 true 的行
@@ -190,69 +195,126 @@ const saveNewSetting = async () => {
   }
 };
 
-
+// 取消按钮：反选所有勾选框
+const cancelNewSetting = () => {
+  // 只对已经选中的项进行反选
+  newSettings.value.forEach(entry => {
+    if (entry.enabled) {
+      entry.enabled = !entry.enabled; // 反选
+    }
+  });
+};
 </script>
 
-<style>
+<style scoped>
 .app-container {
-  display: flex;
   font-family: Arial, sans-serif;
-  height: 100vh;
-}
-
-.content {
-  flex: 1;
   padding: 20px;
 }
 
-.tabs button {
-  padding: 10px;
-  margin-right: 10px;
-  cursor: pointer;
+.content {
+  padding: 20px;
 }
 
-.tabs .active {
-  background-color: #007bff;
+.tabs {
+  margin-bottom: 20px;
+  display: flex;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  background-color: #4d4d4d;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   color: white;
 }
 
-.filters {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+.tabs .active {
+  background-color: #333;
+  color: white;
+  border: 1px solid #4d4d4d;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-input[type="text"] {
-  padding: 5px;
-  width: 200px;
-  height: 35px; /* 调高搜索框高度 */
-  font-size: 14px;
-  box-sizing: border-box;
-  margin-bottom: 10px;
+.tabs button:hover {
+  background-color: #333;
 }
 
-select {
-  padding: 5px;
-  width: 200px;
-  height: 36px;
-  font-size: 14px;
+.search-bar input {
+  padding: 8px;
+  margin-right: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
 
-button {
-  padding: 5px 10px;
-  height: 36px;
-  font-size: 14px;
+.tab-content {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  margin-top: 20px;
+}
+
+.toolbar {
+  margin-top: 20px;
+}
+
+.toolbar button {
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.toolbar button:hover {
+  background-color: #4d4d4d;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 20px;
 }
 
 .data-table th,
 .data-table td {
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   text-align: left;
+}
+
+.data-table th {
+  background-color: #333;
+  color: white;
+}
+
+.data-table tr:hover {
+  background-color: #ddd;
+}
+
+input[type="text"], select {
+  padding: 8px 12px;  /* 使text输入框高度一致 */
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px; /* 与第一段代码一致的字体大小 */
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 </style>

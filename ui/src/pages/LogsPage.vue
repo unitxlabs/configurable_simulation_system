@@ -27,59 +27,107 @@
 import { ref } from 'vue';
 
 const logs = ref([
-  { time: '2024-12-24 11:13:14:009', description: '新建控制器设置 控制器设置1' }
+  { time: '2024-12-24 11:13:14', description: '新建控制器设置 控制器设置1' }
 ]);
 </script>
 
-<style>
+<style scoped>
 .app-container {
-  display: flex;
   font-family: Arial, sans-serif;
-  height: 100vh;
-}
-
-.content {
-  flex: 1;
   padding: 20px;
 }
 
-.search-bar {
-  display: flex;
-  gap: 10px;
+.content {
+  padding: 20px;
+}
+
+.tabs {
   margin-bottom: 20px;
+  display: flex;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  background-color: #4d4d4d;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.tabs .active {
+  background-color: #333;
+  color: white;
+  border: 1px solid #4d4d4d;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.tabs button:hover {
+  background-color: #333;
 }
 
 .search-bar input {
-  padding: 5px;
-  font-size: 14px;
-  border: 1px solid #ccc;
+  padding: 8px;
+  margin-right: 10px;
   border-radius: 4px;
+  border: 1px solid #ccc;
 }
 
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-button {
-  padding: 5px 10px;
-  font-size: 14px;
+.toolbar button {
+  padding: 10px 20px;
+  margin-right: 10px;
   cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #e0e0e0;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.toolbar button:hover {
+  background-color: #4d4d4d;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 20px;
 }
 
 .data-table th,
 .data-table td {
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   text-align: left;
+}
+
+.data-table th {
+  background-color: #333;
+  color: white;
+}
+
+.data-table tr:hover {
+  background-color: #ddd;
+}
+
+input[type="text"], select {
+  padding: 8px 12px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 </style>
