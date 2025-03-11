@@ -1,0 +1,7 @@
+sqlalchemy=2.0.28=py311h459d7ec_0
+psutil=5.9.8=py311h459d7ec_0
+matplotlib-base=3.8.3=py311h54ef318_0
+matplotlib-inline=0.1.7=pyhd8ed1ab_1
+py-cpuinfo=9.0.0=pyhd8ed1ab_1
+openpyxl=3.1.2=py311h459d7ec_1
+pynvml=11.5.0=pyhd8ed1ab_0

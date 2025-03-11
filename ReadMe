@@ -1,0 +1,5 @@
+# 创建conda环境
+conda create -n configurable_simulation_system python=3.11
+conda run -n configurable_simulation_system conda install --yes --file conda_requirements.txt -c conda-forge
+conda run -n configurable_simulation_system pip install --no-cache-dir -r pip_requirements.txt
+
