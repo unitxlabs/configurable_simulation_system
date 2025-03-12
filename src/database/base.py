@@ -6,7 +6,7 @@ import json
 import inspect
 from enum import Enum
 from sqlalchemy import (create_engine, Column, DateTime, Integer, String, Text, ARRAY, Float,
-                        Boolean, ForeignKey, select, event)
+                        Boolean, ForeignKey, select)
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
@@ -34,7 +34,59 @@ class DetectionDimension(Enum):
     THREE_D = 2
 
 
-class IPCConfig(Base):
+# 基类，提供通用的删除和查询方法
+class BaseOperations:
+    @classmethod
+    def delete_data(cls, session: Session, data_id: int):
+        """
+        Delete a record from the table corresponding to the class.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_id (int): The id of the data record to be deleted.
+        """
+        try:
+            # Retrieve the record
+            record_to_delete = session.get(cls, data_id)
+            if record_to_delete:
+                session.delete(record_to_delete)
+                session.commit()
+                logger.info(f"{cls.__name__} deleted data successfully with id {data_id}.")
+            else:
+                logger.info(f"No {cls.__name__} found with id {data_id}.")
+        except Exception as e:
+            cls._handle_exception(session, e, data_id)
+
+    @classmethod
+    def query_data(cls, session: Session, data_dict: dict):
+        """
+        Query the table corresponding to the class based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List: A list of records matching the filter conditions.
+        """
+        try:
+            query = session.query(cls)  # Start building the query
+            for key, value in data_dict.items():
+                if hasattr(cls, key):  # Dynamically filter based on column names
+                    column = getattr(cls, key)
+                    query = query.filter(column == value)
+            return query.all()  # Return all matching records as a list
+        except Exception as e:
+            cls._handle_exception(session, e, data_dict)
+
+    @staticmethod
+    def _handle_exception(session: Session, exception: Exception, context_data):
+        """Handle exceptions and roll back session."""
+        session.rollback()
+        logger.error(f"Failed to process {context_data}: {exception}")
+
+
+class IPCConfig(BaseOperations, Base):
     __tablename__ = "ipc_config"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
@@ -53,15 +105,33 @@ class IPCConfig(Base):
 
     @classmethod
     def add_data(cls, session, data_dict):
-        session.add(IPCConfig(
-            name=data_dict["name"],
-            cpu=data_dict["cpu"],
-            gpus=data_dict["gpus"],
-            ram=data_dict["ram"],
-            ssds=data_dict["ssds"],
-            software_version=data_dict["software_version"],
-        ))
-        session.commit()
+        """
+        Add new data to the IPCConfig table using a dictionary.
+
+        Args:
+            session: SQLAlchemy session object.
+            data_dict: Dictionary containing fields to add.
+        """
+        try:
+            # Create a new IPCConfig object
+            new_ipc_config = IPCConfig(
+                name=data_dict["name"],
+                cpu=data_dict["cpu"],
+                gpus=data_dict["gpus"],
+                ram=data_dict["ram"],
+                ssds=data_dict["ssds"],
+                software_version=data_dict["software_version"],
+            )
+
+            session.add(new_ipc_config)
+            session.commit()
+
+            logger.info(f"{cls.__name__} add new data successfully id: {new_ipc_config.id}.")
+            return new_ipc_config.id
+
+        except Exception as e:
+            session.rollback()
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to add data: {e}")
 
     @classmethod
     def update_data(cls, session, data_dict):
@@ -80,7 +150,7 @@ class IPCConfig(Base):
             # Retrieve the record
             ipc_config = session.get(cls, data_dict["id"])
             if not ipc_config:
-                raise NoResultFound(f"No IPCConfig found with id {data_dict['id']}")
+                raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
@@ -90,22 +160,62 @@ class IPCConfig(Base):
             # Commit the changes
             session.add(ipc_config)
             session.commit()
-            logger.info(f"IPCConfig with id {data_dict['id']} updated successfully.")
+            logger.info(f"{cls.__name__} with id {data_dict['id']} updated successfully.")
 
         except Exception as e:
             session.rollback()
-            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update IPCConfig: {e}")
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    @classmethod
-    def delete_data(cls, session, data_dict):
-        pass
+    # @classmethod
+    # def delete_data(cls, session, data_id):
+    #     """
+    #     Delete the IPCConfig table using a dictionary.
+    #
+    #     Args:
+    #         session: SQLAlchemy session object.
+    #         data_id: the id of data recode in IPCConfig table to be deleted.
+    #     """
+    #     try:
+    #         # Retrieve the record
+    #         ipc_config_to_delete = session.get(cls, data_id)
+    #         if ipc_config_to_delete:
+    #             session.delete(ipc_config_to_delete)
+    #             session.commit()
+    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
+    #         else:
+    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
+    #
+    #     except Exception as e:
+    #         session.rollback()
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
+    #
+    # @classmethod
+    # def query_data(cls, session, data_dict):
+    #     """
+    #     Query the IPCConfig table based on a dictionary of filters.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+    #
+    #     Returns:
+    #         List[IPCConfig]: A list of IPCConfig objects matching the filter conditions.
+    #     """
+    #     try:
+    #         query = session.query(cls)  # Start building the query
+    #         # Dynamically add filters based on the keys in filter_dict
+    #         for key, value in data_dict.items():
+    #             if hasattr(cls, key):  # Check if the attribute exists on the model
+    #                 column = getattr(cls, key)
+    #                 query = query.filter(column==value)
+    #
+    #         return query.all()  # Return all matching records as a list
+    #
+    #     except Exception as e:
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update IPCConfig: {e}")
 
-    @classmethod
-    def query_data(cls, session, data_dict):
-        pass
 
-
-class ControllerConfig(Base):
+class ControllerConfig(BaseOperations, Base):
     __tablename__ = "controller_config"
     id = Column(Integer, primary_key=True, autoincrement=True)
     controller_id = Column(String, nullable=False)
@@ -129,17 +239,31 @@ class ControllerConfig(Base):
 
     @classmethod
     def add_data(cls, session, data_dict):
-        session.add(ControllerConfig(
-            controller_id=data_dict["controller_id"],
-            controller_version=data_dict["controller_version"],
-            cameras_id=data_dict["cameras_id"],
-            image_width=data_dict["image_width"],
-            image_height=data_dict["image_height"],
-            image_channel=data_dict.setdefault("image_channel", 3),
-            capture_images_count=data_dict["capture_images_count"],
-            network_inference_count=data_dict["network_inference_count"],
-        ))
-        session.commit()
+        """
+        Add new data to the ControllerConfig table using a dictionary.
+
+        Args:
+            session: SQLAlchemy session object.
+            data_dict: Dictionary containing fields to add.
+        """
+        try:
+            new_controller_config = ControllerConfig(
+                controller_id=data_dict["controller_id"],
+                controller_version=data_dict["controller_version"],
+                cameras_id=data_dict["cameras_id"],
+                image_width=data_dict["image_width"],
+                image_height=data_dict["image_height"],
+                image_channel=data_dict.setdefault("image_channel", 3),
+                capture_images_count=data_dict["capture_images_count"],
+                network_inference_count=data_dict["network_inference_count"],
+            )
+            session.add(new_controller_config)
+            session.commit()
+            logger.info(f"{cls.__name__} add new data successfully id: {new_controller_config.id}.")
+            return new_controller_config.id
+        except Exception as e:
+            session.rollback()
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to add data: {e}")
 
     @classmethod
     def update_data(cls, session, data_dict):
@@ -156,36 +280,84 @@ class ControllerConfig(Base):
                 raise ValueError("The dictionary must contain an 'id' key to identify the record.")
 
             # Retrieve the record
-            ipc_config = session.get(cls, data_dict["id"])
-            if not ipc_config:
-                raise NoResultFound(f"No IPCConfig found with id {data_dict['id']}")
+            controller_config = session.get(cls, data_dict["id"])
+            if not controller_config:
+                raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
-                if hasattr(ipc_config, key) and key != "id":  # Ensure only valid attributes are updated
-                    setattr(ipc_config, key, value)
+                if hasattr(controller_config, key) and key != "id":  # Ensure only valid attributes are updated
+                    setattr(controller_config, key, value)
 
             # Commit the changes
-            session.add(ipc_config)
+            session.add(controller_config)
             session.commit()
-            logger.info(f"IPCConfig with id {data_dict['id']} updated successfully.")
+            logger.info(f"{cls.__name__} updated successfully with id {data_dict['id']}.")
 
         except Exception as e:
             session.rollback()
-            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update IPCConfig: {e}")
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
+
+    # @classmethod
+    # def delete_data(cls, session, data_id):
+    #     """
+    #     Delete the ControllerConfig table using a dictionary.
+    #
+    #     Args:
+    #         session: SQLAlchemy session object.
+    #         data_id: the id of data recode in ControllerConfig table to be deleted.
+    #     """
+    #     try:
+    #         # Retrieve the record
+    #         controller_config_to_delete = session.get(cls, data_id)
+    #         if controller_config_to_delete:
+    #             session.delete(controller_config_to_delete)
+    #             session.commit()
+    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
+    #         else:
+    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
+    #
+    #     except Exception as e:
+    #         session.rollback()
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
+    #
+    # @classmethod
+    # def query_data(cls, session, data_dict):
+    #     """
+    #     Query the ControllerConfig table based on a dictionary of filters.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+    #
+    #     Returns:
+    #         List[ControllerConfig]: A list of ControllerConfig objects matching the filter conditions.
+    #     """
+    #     try:
+    #         query = session.query(cls)  # Start building the query
+    #         # Dynamically add filters based on the keys in filter_dict
+    #         for key, value in data_dict.items():
+    #             if hasattr(cls, key):  # Check if the attribute exists on the model
+    #                 column = getattr(cls, key)
+    #                 query = query.filter(column==value)
+    #
+    #         return query.all()  # Return all matching records as a list
+    #
+    #     except Exception as e:
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
-class WorkstationConfig(Base):
+class WorkstationConfig(BaseOperations, Base):
     __tablename__ = "workstation_config"
     id = Column(Integer, primary_key=True, autoincrement="auto")
     workstation_id = Column(Integer, nullable=False)
     # 工位连接的控制器的配置的ID
     controller_config_id=Column(Integer, ForeignKey('controller_config.id'), nullable=False)
 
-    # 当前工位到下一个工位的距离-时间间隔，如果当前工位是最后一个工位，则该距离是到part end的距离
-    to_next_ws_offset = Column(Integer, nullable=False)
-    # 当前工位的控制器连接的相机的复位时间间隔，单位ms,飞拍需要，定拍不需要。如果当前工位被选中，则需要设置，否则，不需要设置
-    camera_reset_time = Column(Integer, nullable=False)
+    # 当前工位到下一个工位的距离-时间间隔，单位s如果当前工位是最后一个工位，则该距离是到part end的距离
+    to_next_ws_offset = Column(Float, nullable=False)
+    # 当前工位的控制器连接的相机的复位时间间隔，单位s,飞拍需要，定拍不需要。如果当前工位被选中，则需要设置，否则，不需要设置
+    camera_reset_time = Column(Float, nullable=False)
     # 当前工位中的sequence数量
     sequence_count = Column(Integer, nullable=False)
     # 数组，当前PLC的工位需要触发的sequence的id，按照需要触发的先后顺序填写；
@@ -207,16 +379,30 @@ class WorkstationConfig(Base):
 
     @classmethod
     def add_data(cls, session, data_dict):
-        session.add(WorkstationConfig(
-            workstation_id=data_dict["workstation_id"],
-            controller_config_id=data_dict["controller_config_id"],
-            to_next_ws_offset=data_dict["to_next_ws_offset"],
-            camera_reset_time=data_dict.setdefault("camera_reset_time", 0),
-            sequence_count=data_dict["sequence_count"],
-            sequences_id=data_dict["sequences_id"],
-            sequences_interval=data_dict["sequences_interval"],
-        ))
-        session.commit()
+        """
+        Add new data to the WorkstationConfig table using a dictionary.
+
+        Args:
+            session: SQLAlchemy session object.
+            data_dict: Dictionary containing fields to add.
+        """
+        try:
+            new_workstation_config = WorkstationConfig(
+                workstation_id=data_dict["workstation_id"],
+                controller_config_id=data_dict["controller_config_id"],
+                to_next_ws_offset=data_dict["to_next_ws_offset"],
+                camera_reset_time=data_dict.setdefault("camera_reset_time", 0),
+                sequence_count=data_dict["sequence_count"],
+                sequences_id=data_dict["sequences_id"],
+                sequences_interval=data_dict["sequences_interval"],
+            )
+            session.add(new_workstation_config)
+            session.commit()
+            logger.info(f"{cls.__name__} add new data successfully id: {new_workstation_config.id}.")
+            return new_workstation_config.id
+        except Exception as e:
+            session.rollback()
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to add data: {e}")
 
     @classmethod
     def update_data(cls, session, data_dict):
@@ -233,26 +419,74 @@ class WorkstationConfig(Base):
                 raise ValueError("The dictionary must contain an 'id' key to identify the record.")
 
             # Retrieve the record
-            ipc_config = session.get(cls, data_dict["id"])
-            if not ipc_config:
-                raise NoResultFound(f"No IPCConfig found with id {data_dict['id']}")
+            workstation_config = session.get(cls, data_dict["id"])
+            if not workstation_config:
+                raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
-                if hasattr(ipc_config, key) and key != "id":  # Ensure only valid attributes are updated
-                    setattr(ipc_config, key, value)
+                if hasattr(workstation_config, key) and key != "id":  # Ensure only valid attributes are updated
+                    setattr(workstation_config, key, value)
 
             # Commit the changes
-            session.add(ipc_config)
+            session.add(workstation_config)
             session.commit()
-            logger.info(f"IPCConfig with id {data_dict['id']} updated successfully.")
+            logger.info(f"{cls.__name__} with id {data_dict['id']} updated successfully.")
 
         except Exception as e:
             session.rollback()
-            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update IPCConfig: {e}")
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
+
+    # @classmethod
+    # def delete_data(cls, session, data_id):
+    #     """
+    #     Delete the WorkstationConfig table using a dictionary.
+    #
+    #     Args:
+    #         session: SQLAlchemy session object.
+    #         data_id: the id of data recode in WorkstationConfig table to be deleted.
+    #     """
+    #     try:
+    #         # Retrieve the record
+    #         workstation_config_to_delete = session.get(cls, data_id)
+    #         if workstation_config_to_delete:
+    #             session.delete(workstation_config_to_delete)
+    #             session.commit()
+    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
+    #         else:
+    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
+    #
+    #     except Exception as e:
+    #         session.rollback()
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
+    #
+    # @classmethod
+    # def query_data(cls, session, data_dict):
+    #     """
+    #     Query the WorkstationConfig table based on a dictionary of filters.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+    #
+    #     Returns:
+    #         List[WorkstationConfig]: A list of WorkstationConfig objects matching the filter conditions.
+    #     """
+    #     try:
+    #         query = session.query(cls)  # Start building the query
+    #         # Dynamically add filters based on the keys in filter_dict
+    #         for key, value in data_dict.items():
+    #             if hasattr(cls, key):  # Check if the attribute exists on the model
+    #                 column = getattr(cls, key)
+    #                 query = query.filter(column==value)
+    #
+    #         return query.all()  # Return all matching records as a list
+    #
+    #     except Exception as e:
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
-class CommunicationConfig(Base):
+class CommunicationConfig(BaseOperations, Base):
     __tablename__ = "communication_config"
     id = Column(Integer, primary_key=True, autoincrement=True)
     # 物料类型
@@ -282,29 +516,44 @@ class CommunicationConfig(Base):
 
     @classmethod
     def add_data(cls, session, data_dict):
-        workstation_ids = set(session.scalars(select(WorkstationConfig.id)).all())
-        if all(workstation_id in workstation_ids for workstation_id in data_dict["workstation_config_ids"]):
-            # if data_dict["communication_step"] == CommunicationType.MOTION_SHOOTING.value:
-            #     data_dict["communication_step"] = 0
+        """
+       Add new data to the CommunicationConfig table using a dictionary.
 
-            if data_dict["communication_step"] not in CommunicationType._value2member_map_:
-                logger.error(f"{inspect.currentframe().f_code.co_name} failed: data_dict[communication_step] "
-                             f"{data_dict['communication_step']} value not correct.")
+       Args:
+           session: SQLAlchemy session object.
+           data_dict: Dictionary containing fields to add.
+       """
+        try:
+            workstation_ids = set(session.scalars(select(WorkstationConfig.id)).all())
+            if all(workstation_id in workstation_ids for workstation_id in data_dict["workstation_config_ids"]):
+                # if data_dict["communication_step"] == CommunicationType.MOTION_SHOOTING.value:
+                #     data_dict["communication_step"] = 0
+
+                if data_dict["communication_step"] not in CommunicationType._value2member_map_:
+                    logger.error(f"{inspect.currentframe().f_code.co_name} failed: data_dict[communication_step] "
+                                 f"{data_dict['communication_step']} value not correct.")
+                else:
+                    new_communication_config = CommunicationConfig(
+                        part_type=data_dict["part_type"],
+                        part_interval=data_dict["part_interval"],
+                        communication_type=data_dict["communication_type"],
+                        communication_step=data_dict["communication_step"],
+                        workstation_count=data_dict["workstation_count"],
+                        workstation_config_ids=data_dict["workstation_config_ids"],
+                        workstations_in_use=data_dict["workstations_in_use"],
+                    )
+                    session.add(new_communication_config)
+                    session.commit()
+
+                    logger.info(f"{cls.__name__} add new data successfully id: {new_communication_config.id}.")
+                    return new_communication_config.id
             else:
-                session.add(CommunicationConfig(
-                    part_type=data_dict["part_type"],
-                    part_interval=data_dict["part_interval"],
-                    communication_type=data_dict["communication_type"],
-                    communication_step=data_dict["communication_step"],
-                    workstation_count=data_dict["workstation_count"],
-                    workstation_config_ids=data_dict["workstation_config_ids"],
-                    workstations_in_use=data_dict["workstations_in_use"],
-                ))
-                session.commit()
-        else:
-            logger.error(f"{inspect.currentframe().f_code.co_name} failed: "
-                         f"data_dict[workstation_config_ids] {data_dict['workstation_config_ids']} "
-                         f"not all in WorkstationConfig.id {workstation_ids}")
+                logger.error(f"{inspect.currentframe().f_code.co_name} failed: "
+                             f"data_dict[workstation_config_ids] {data_dict['workstation_config_ids']} "
+                             f"not all in WorkstationConfig.id {workstation_ids}")
+        except Exception as e:
+            session.rollback()
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to add data: {e}")
 
     @classmethod
     def update_data(cls, session, data_dict):
@@ -325,7 +574,7 @@ class CommunicationConfig(Base):
             # Retrieve the record
             ipc_config = session.get(cls, data_dict["id"])
             if not ipc_config:
-                raise NoResultFound(f"No IPCConfig found with id {data_dict['id']}")
+                raise NoResultFound(f"No {cls.__name__}  found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
@@ -335,14 +584,62 @@ class CommunicationConfig(Base):
             # Commit the changes
             session.add(ipc_config)
             session.commit()
-            logger.info(f"IPCConfig with id {data_dict['id']} updated successfully.")
+            logger.info(f"{cls.__name__}  with id {data_dict['id']} updated successfully.")
 
         except Exception as e:
             session.rollback()
-            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update IPCConfig: {e}")
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
+
+    # @classmethod
+    # def delete_data(cls, session, data_id):
+    #     """
+    #     Delete the CommunicationConfig table using a dictionary.
+    #
+    #     Args:
+    #         session: SQLAlchemy session object.
+    #         data_id: the id of data recode in CommunicationConfig table to be deleted.
+    #     """
+    #     try:
+    #         # Retrieve the record
+    #         communication_config_to_delete = session.get(cls, data_id)
+    #         if communication_config_to_delete:
+    #             session.delete(communication_config_to_delete)
+    #             session.commit()
+    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
+    #         else:
+    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
+    #
+    #     except Exception as e:
+    #         session.rollback()
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
+    #
+    # @classmethod
+    # def query_data(cls, session, data_dict):
+    #     """
+    #     Query the CommunicationConfig table based on a dictionary of filters.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+    #
+    #     Returns:
+    #         List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
+    #     """
+    #     try:
+    #         query = session.query(cls)  # Start building the query
+    #         # Dynamically add filters based on the keys in filter_dict
+    #         for key, value in data_dict.items():
+    #             if hasattr(cls, key):  # Check if the attribute exists on the model
+    #                 column = getattr(cls, key)
+    #                 query = query.filter(column==value)
+    #
+    #         return query.all()  # Return all matching records as a list
+    #
+    #     except Exception as e:
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
-class IPCPerformance(Base):
+class IPCPerformance(BaseOperations, Base):
     __tablename__ = "ipc_performance"
     id = Column(Integer, primary_key=True, autoincrement=True)
     # ForeignKey references ipc_config.id
@@ -376,42 +673,56 @@ class IPCPerformance(Base):
 
     @classmethod
     def add_data(cls, session, data_dict):
-        new_ipc_performance = IPCPerformance(
-            # ForeignKey references ipc_config.id
-            ipc_config_id=data_dict["ipc_config_id"],
-            # ForeignKey references simulation_result.id
-            simulation_result_id=data_dict["simulation_result_id"],
-            # IPC 上运行的模型信息
-            model_size=data_dict["model_size"],
-            network_architecture=data_dict["network_architecture"],
-            # IPC性能和资源消耗
-            cpu_usage_avg=data_dict["cpu_usage_avg"],
-            gpus_usage_avg=data_dict["gpus_usage_avg"],
-            gpus_memory_usage_avg=data_dict["gpus_memory_usage_avg"],
-            memory_usage_avg=data_dict["memory_usage_avg"],
-            disk_usage_avg=data_dict["disk_usage_avg"],
-            disk_read_speed_avg=data_dict["disk_read_speed_avg"],
-            disk_write_speed_avg=data_dict["disk_write_speed_avg"],
-        )
-        session.add(new_ipc_performance)
+        """
+        Add new data to the IPCPerformance table using a dictionary.
 
-        session.flush()
+        Args:
+            session: SQLAlchemy session object.
+            data_dict: Dictionary containing fields to add.
+        """
+        try:
+            new_ipc_performance = IPCPerformance(
+                # ForeignKey references ipc_config.id
+                ipc_config_id=data_dict["ipc_config_id"],
+                # ForeignKey references simulation_result.id
+                simulation_result_id=data_dict["simulation_result_id"],
+                # IPC 上运行的模型信息
+                model_size=data_dict["model_size"],
+                network_architecture=data_dict["network_architecture"],
+                # IPC性能和资源消耗
+                cpu_usage_avg=data_dict["cpu_usage_avg"],
+                gpus_usage_avg=data_dict["gpus_usage_avg"],
+                gpus_memory_usage_avg=data_dict["gpus_memory_usage_avg"],
+                memory_usage_avg=data_dict["memory_usage_avg"],
+                disk_usage_avg=data_dict["disk_usage_avg"],
+                disk_read_speed_avg=data_dict["disk_read_speed_avg"],
+                disk_write_speed_avg=data_dict["disk_write_speed_avg"],
+            )
+            session.add(new_ipc_performance)
 
-        # 更新 SimulationResult.ipc_performance_ids
-        simulation_result = session.query(SimulationResult).get(new_ipc_performance.simulation_result_id)
-        if simulation_result:
-            if simulation_result.ipc_performance_ids is None:
-                simulation_result.ipc_performance_ids = []
-            updated_list = simulation_result.ipc_performance_ids + [new_ipc_performance.id]
-            seen = set()
-            unique_list = [x for x in updated_list if not (x in seen or seen.add(x))]
-            simulation_result.ipc_performance_ids = unique_list  # 显式赋值
-        session.commit()
+            session.flush()
+
+            # 更新 SimulationResult.ipc_performance_ids
+            simulation_result = session.query(SimulationResult).get(new_ipc_performance.simulation_result_id)
+            if simulation_result:
+                if simulation_result.ipc_performance_ids is None:
+                    simulation_result.ipc_performance_ids = []
+                updated_list = simulation_result.ipc_performance_ids + [new_ipc_performance.id]
+                seen = set()
+                unique_list = [x for x in updated_list if not (x in seen or seen.add(x))]
+                simulation_result.ipc_performance_ids = unique_list  # 显式赋值
+            session.commit()
+
+            logger.info(f"{cls.__name__} add new data successfully id: {new_ipc_performance.id}.")
+            return new_ipc_performance.id
+        except Exception as e:
+            session.rollback()
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to add data: {e}")
 
     @classmethod
     def update_data(cls, session, data_dict):
         """
-        Update the CommunicationConfig table using a dictionary.
+        Update the IPCPerformance table using a dictionary.
 
         Args:
             session: SQLAlchemy session object.
@@ -425,7 +736,7 @@ class IPCPerformance(Base):
             # Retrieve the record
             ipc_config = session.get(cls, data_dict["id"])
             if not ipc_config:
-                raise NoResultFound(f"No IPCConfig found with id {data_dict['id']}")
+                raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
@@ -435,14 +746,62 @@ class IPCPerformance(Base):
             # Commit the changes
             session.add(ipc_config)
             session.commit()
-            logger.info(f"IPCConfig with id {data_dict['id']} updated successfully.")
+            logger.info(f"{cls.__name__} with id {data_dict['id']} updated successfully.")
 
         except Exception as e:
             session.rollback()
-            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update IPCConfig: {e}")
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
+
+    # @classmethod
+    # def delete_data(cls, session, data_id):
+    #     """
+    #     Delete the IPCPerformance table using a dictionary.
+    #
+    #     Args:
+    #         session: SQLAlchemy session object.
+    #         data_id: the id of data recode in IPCPerformance table to be deleted.
+    #     """
+    #     try:
+    #         # Retrieve the record
+    #         ipc_performance_config_to_delete = session.get(cls, data_id)
+    #         if ipc_performance_config_to_delete:
+    #             session.delete(ipc_performance_config_to_delete)
+    #             session.commit()
+    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
+    #         else:
+    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
+    #
+    #     except Exception as e:
+    #         session.rollback()
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
+    #
+    # @classmethod
+    # def query_data(cls, session, data_dict):
+    #     """
+    #     Query the IPCPerformance table based on a dictionary of filters.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+    #
+    #     Returns:
+    #         List[IPCPerformance]: A list of IPCPerformance objects matching the filter conditions.
+    #     """
+    #     try:
+    #         query = session.query(cls)  # Start building the query
+    #         # Dynamically add filters based on the keys in filter_dict
+    #         for key, value in data_dict.items():
+    #             if hasattr(cls, key):  # Check if the attribute exists on the model
+    #                 column = getattr(cls, key)
+    #                 query = query.filter(column == value)
+    #
+    #         return query.all()  # Return all matching records as a list
+    #
+    #     except Exception as e:
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
-class SimulationResult(Base):
+class SimulationResult(BaseOperations, Base):
     __tablename__ = "simulation_result"
     id = Column(Integer, primary_key=True, autoincrement=True)
     # 当前有2D，2.5D，未来可能会有3D
@@ -471,7 +830,7 @@ class SimulationResult(Base):
     # 测试的总用时
     total_time_used = Column(Float, nullable=False)
     fps = Column(Float, nullable=False)
-    mps = Column(Integer, nullable=False)
+    mps = Column(Float, nullable=False)
 
     # 物料处理用时
     max_part_use_time = Column(Float, nullable=False)
@@ -506,74 +865,88 @@ class SimulationResult(Base):
 
     @classmethod
     def add_data(cls, session, data_dict):
-        # 删除表中的所有数据
-        # self.session.query(SimulationResult).delete()
-        # self.session.commit()
+        """
+        Add new data to the SimulationResult table using a dictionary.
 
-        communication_config_ids = set(session.scalars(select(WorkstationConfig.id)).all())
-        if all(item in communication_config_ids for item in data_dict["communication_config_ids"]):
-            if data_dict.setdefault("detection_dimension", 0) == DetectionDimension.TWO_D.value:
-                data_dict.setdefault("max_25d_mean_time", 0),
-                data_dict.setdefault("min_25d_mean_time", 0),
-                data_dict.setdefault("avg_25d_mean_time", 0),
-                data_dict.setdefault("max_25d_normal_time", 0),
-                data_dict.setdefault("min_25d_normal_time", 0),
-                data_dict.setdefault("avg_25d_normal_time", 0),
-                data_dict.setdefault("max_25d_height_time", 0),
-                data_dict.setdefault("min_25d_height_time", 0),
-                data_dict.setdefault("avg_25d_height_time", 0),
+        Args:
+            session: SQLAlchemy session object.
+            data_dict: Dictionary containing fields to add.
+        """
+        try:
+            # 删除表中的所有数据
+            # self.session.query(SimulationResult).delete()
+            # self.session.commit()
 
-            session.add(SimulationResult(
-                # part information
-                detection_dimension=data_dict["detection_dimension"],
-                part_type=data_dict["part_type"],
-                part_interval=data_dict["part_interval"],
-                total_image_count=data_dict["total_image_count"],
-                total_inference_count=data_dict["total_inference_count"],
-                ng_type_count=data_dict["ng_type_count"],
-                each_ng_type_defect_count=data_dict["each_ng_type_defect_count"],
+            communication_config_ids = set(session.scalars(select(WorkstationConfig.id)).all())
+            if all(item in communication_config_ids for item in data_dict["communication_config_ids"]):
+                if data_dict.setdefault("detection_dimension", 0) == DetectionDimension.TWO_D.value:
+                    data_dict.setdefault("max_25d_mean_time", 0),
+                    data_dict.setdefault("min_25d_mean_time", 0),
+                    data_dict.setdefault("avg_25d_mean_time", 0),
+                    data_dict.setdefault("max_25d_normal_time", 0),
+                    data_dict.setdefault("min_25d_normal_time", 0),
+                    data_dict.setdefault("avg_25d_normal_time", 0),
+                    data_dict.setdefault("max_25d_height_time", 0),
+                    data_dict.setdefault("min_25d_height_time", 0),
+                    data_dict.setdefault("avg_25d_height_time", 0),
 
-                # ipc information
-                ipc_count=data_dict["ipc_count"],
-                ipcs_config_id=data_dict["ipcs_config_id"],
-                # communication information
-                communication_config_ids=data_dict["communication_config_ids"],
-                is_image_saving=data_dict["is_image_saving"],
+                new_communication_result = SimulationResult(
+                    # part information
+                    detection_dimension=data_dict["detection_dimension"],
+                    part_type=data_dict["part_type"],
+                    part_interval=data_dict["part_interval"],
+                    total_image_count=data_dict["total_image_count"],
+                    total_inference_count=data_dict["total_inference_count"],
+                    ng_type_count=data_dict["ng_type_count"],
+                    each_ng_type_defect_count=data_dict["each_ng_type_defect_count"],
 
-                # ipc process result
-                part_count=data_dict["part_count"],
-                total_time_used=data_dict["total_time_used"],
-                fps=data_dict["fps"],
-                mps=data_dict["mps"],
+                    # ipc information
+                    ipc_count=data_dict["ipc_count"],
+                    ipcs_config_id=data_dict["ipcs_config_id"],
+                    # communication information
+                    communication_config_ids=data_dict["communication_config_ids"],
+                    is_image_saving=data_dict["is_image_saving"],
 
-                max_part_use_time=data_dict["max_part_use_time"],
-                min_part_use_time=data_dict["min_part_use_time"],
-                avg_part_use_time=data_dict["avg_part_use_time"],
-                max_image_capture_time=data_dict["max_image_capture_time"],
-                min_image_capture_time=data_dict["min_image_capture_time"],
-                avg_image_capture_time=data_dict["avg_image_capture_time"],
-                max_cortex_infer_time=data_dict["max_cortex_infer_time"],
-                min_cortex_infer_time=data_dict["min_cortex_infer_time"],
-                avg_cortex_infer_time=data_dict["avg_cortex_infer_time"],
-                # 2.5D project use
-                max_25d_mean_time=data_dict["max_25d_mean_time"],
-                min_25d_mean_time=data_dict["min_25d_mean_time"],
-                avg_25d_mean_time=data_dict["avg_25d_mean_time"],
-                max_25d_normal_time=data_dict["max_25d_normal_time"],
-                min_25d_normal_time=data_dict["min_25d_normal_time"],
-                avg_25d_normal_time=data_dict["avg_25d_normal_time"],
-                max_25d_height_time=data_dict["max_25d_height_time"],
-                min_25d_height_time=data_dict["min_25d_height_time"],
-                avg_25d_height_time=data_dict["avg_25d_height_time"],
+                    # ipc process result
+                    part_count=data_dict["part_count"],
+                    total_time_used=data_dict["total_time_used"],
+                    fps=data_dict["fps"],
+                    mps=data_dict["mps"],
 
-                ipc_performance_ids=data_dict["ipc_performance_ids"],
-                core_allocation=data_dict["core_allocation"],
-            ))
-            session.commit()
-        else:
-            logger.error(f"{inspect.currentframe().f_code.co_name} failed: "
-                         f"data_dict[communication_config_ids] {data_dict['communication_config_ids']} "
-                         f"not all in CommunicationConfig.id {communication_config_ids}")
+                    max_part_use_time=data_dict["max_part_use_time"],
+                    min_part_use_time=data_dict["min_part_use_time"],
+                    avg_part_use_time=data_dict["avg_part_use_time"],
+                    max_image_capture_time=data_dict["max_image_capture_time"],
+                    min_image_capture_time=data_dict["min_image_capture_time"],
+                    avg_image_capture_time=data_dict["avg_image_capture_time"],
+                    max_cortex_infer_time=data_dict["max_cortex_infer_time"],
+                    min_cortex_infer_time=data_dict["min_cortex_infer_time"],
+                    avg_cortex_infer_time=data_dict["avg_cortex_infer_time"],
+                    # 2.5D project use
+                    max_25d_mean_time=data_dict["max_25d_mean_time"],
+                    min_25d_mean_time=data_dict["min_25d_mean_time"],
+                    avg_25d_mean_time=data_dict["avg_25d_mean_time"],
+                    max_25d_normal_time=data_dict["max_25d_normal_time"],
+                    min_25d_normal_time=data_dict["min_25d_normal_time"],
+                    avg_25d_normal_time=data_dict["avg_25d_normal_time"],
+                    max_25d_height_time=data_dict["max_25d_height_time"],
+                    min_25d_height_time=data_dict["min_25d_height_time"],
+                    avg_25d_height_time=data_dict["avg_25d_height_time"],
+
+                    ipc_performance_ids=data_dict["ipc_performance_ids"],
+                    core_allocation=data_dict["core_allocation"],
+                )
+                session.add(new_communication_result)
+                session.commit()
+                logger.info(f"{cls.__name__} add new data successfully id: {new_communication_result.id}.")
+                return new_communication_result.id
+            else:
+                logger.error(f"{inspect.currentframe().f_code.co_name} failed: "
+                             f"data_dict[communication_config_ids] {data_dict['communication_config_ids']} "
+                             f"not all in CommunicationConfig.id {communication_config_ids}")
+        except Exception as e:
+            session.rollback()
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to add data: {e}")
 
     @classmethod
     def update_data(cls, session, data_dict):
@@ -594,7 +967,7 @@ class SimulationResult(Base):
             # Retrieve the record
             ipc_config = session.get(cls, data_dict["id"])
             if not ipc_config:
-                raise NoResultFound(f"No IPCConfig found with id {data_dict['id']}")
+                raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
@@ -604,11 +977,78 @@ class SimulationResult(Base):
             # Commit the changes
             session.add(ipc_config)
             session.commit()
-            logger.info(f"IPCConfig with id {data_dict['id']} updated successfully.")
+            logger.info(f"{cls.__name__} with id {data_dict['id']} updated successfully.")
 
         except Exception as e:
             session.rollback()
-            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update IPCConfig: {e}")
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
+
+    # @classmethod
+    # def delete_data(cls, session, data_id):
+    #     """
+    #     Delete the SimulationResult table using a dictionary.
+    #
+    #     Args:
+    #         session: SQLAlchemy session object.
+    #         data_id: the id of data recode in SimulationResult table to be deleted.
+    #     """
+    #     try:
+    #         # Retrieve the record
+    #         ipc_config_to_delete = session.get(cls, data_id)
+    #         if ipc_config_to_delete:
+    #             session.delete(ipc_config_to_delete)
+    #             session.commit()
+    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
+    #         else:
+    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
+    #
+    #     except Exception as e:
+    #         session.rollback()
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
+    #
+    # @classmethod
+    # def query_data(cls, session, data_dict):
+    #     """
+    #     Query the SimulationResult table based on a dictionary of filters.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+    #
+    #     Returns:
+    #         List[SimulationResult]: A list of SimulationResult objects matching the filter conditions.
+    #     """
+    #     try:
+    #         query = session.query(cls)  # Start building the query
+    #         # Dynamically add filters based on the keys in filter_dict
+    #         for key, value in data_dict.items():
+    #             if hasattr(cls, key):  # Check if the attribute exists on the model
+    #                 column = getattr(cls, key)
+    #                 query = query.filter(column == value)
+    #
+    #         return query.all()  # Return all matching records as a list
+    #
+    #     except Exception as e:
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
+
+
+class TableFactory:
+    """工厂类，动态获取 Table 处理类"""
+    TABLE_MAPPING = {
+        "ipc_config": IPCConfig,
+        "controller_config": ControllerConfig,
+        "workstation_config": WorkstationConfig,
+        "communication_config": CommunicationConfig,
+        "ipc_performance": IPCPerformance,
+        "simulation_result": SimulationResult,
+    }
+
+    @classmethod
+    def get_table(cls, table_name):
+        table_class = cls.TABLE_MAPPING.get(table_name)
+        if not table_class:
+            raise ValueError(f"Table {table_name} not existed!")
+        return table_class
 
 
 class ConfigurableSimulationSystemDB:
@@ -641,20 +1081,12 @@ class ConfigurableSimulationSystemDB:
 
     def add_data(self, table_name, data_dict):
         try:
-            if table_name == "ipc_config":
-                IPCConfig.add_data(session=self.session, data_dict=data_dict)
-            elif table_name == "controller_config":
-                ControllerConfig.add_data(session=self.session, data_dict=data_dict)
-            elif table_name == "workstation_config":
-                WorkstationConfig.add_data(session=self.session, data_dict=data_dict)
-            elif table_name == "communication_config":
-                CommunicationConfig.add_data(session=self.session, data_dict=data_dict)
-            elif table_name == "ipc_performance":
-                IPCPerformance.add_data(session=self.session, data_dict=data_dict)
-            elif table_name == "simulation_result":
-                SimulationResult.add_data(session=self.session, data_dict=data_dict)
-            else:
-                raise Exception(f"table {table_name} not existed!")
+            table_class = TableFactory.get_table(table_name)
+            if not table_class:
+                raise Exception(f"Table {table_name} does not exist!")
+
+            new_data_id = table_class.add_data(session=self.session, data_dict=data_dict)
+            return new_data_id
 
         except KeyError as e:
             logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
@@ -666,26 +1098,49 @@ class ConfigurableSimulationSystemDB:
 
     def update_data(self, table_name, data_dict):
         try:
-            if table_name == "ipc_config":
-                IPCConfig.update_data(session=self.session, data_dict=data_dict)
-            elif table_name == "controller_config":
-                ControllerConfig.update_data(session=self.session, data_dict=data_dict)
-            elif table_name == "workstation_config":
-                WorkstationConfig.update_data(session=self.session, data_dict=data_dict)
-            elif table_name == "communication_config":
-                CommunicationConfig.update_data(session=self.session, data_dict=data_dict)
-            elif table_name == "ipc_performance":
-                IPCPerformance.update_data(session=self.session, data_dict=data_dict)
-            elif table_name == "simulation_result":
-                SimulationResult.update_data(session=self.session, data_dict=data_dict)
-            else:
-                raise Exception(f"table {table_name} not existed!")
+            table_class = TableFactory.get_table(table_name)
+            if not table_class:
+                raise Exception(f"Table {table_name} does not exist!")
+
+            table_class.update_data(session=self.session, data_dict=data_dict)
 
         except KeyError as e:
             logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
         except IntegrityError:
             self.session.rollback()
             logger.warning(f"Duplicate entry detected table {table_name} {data_dict}.")
+        except Exception as e:
+            logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
+
+    def query_data(self, table_name, data_dict):
+        try:
+            table_class = TableFactory.get_table(table_name)
+            if not table_class:
+                raise Exception(f"Table {table_name} does not exist!")
+
+            query_data = table_class.query_data(session=self.session, data_dict=data_dict)
+            return query_data
+
+        except KeyError as e:
+            logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
+        except IntegrityError:
+            logger.warning(f"Duplicate entry detected table {table_name} {data_dict}.")
+        except Exception as e:
+            logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
+
+    def delete_data(self, table_name, data_id):
+        try:
+            table_class = TableFactory.get_table(table_name)
+            if not table_class:
+                raise Exception(f"Table {table_name} does not exist!")
+
+            table_class.delete_data(session=self.session, data_id=data_id)
+
+        except KeyError as e:
+            logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
+        except IntegrityError:
+            self.session.rollback()
+            logger.warning(f"Duplicate entry detected table {table_name} {data_id}.")
         except Exception as e:
             logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
 
