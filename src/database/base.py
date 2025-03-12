@@ -166,54 +166,6 @@ class IPCConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    # @classmethod
-    # def delete_data(cls, session, data_id):
-    #     """
-    #     Delete the IPCConfig table using a dictionary.
-    #
-    #     Args:
-    #         session: SQLAlchemy session object.
-    #         data_id: the id of data recode in IPCConfig table to be deleted.
-    #     """
-    #     try:
-    #         # Retrieve the record
-    #         ipc_config_to_delete = session.get(cls, data_id)
-    #         if ipc_config_to_delete:
-    #             session.delete(ipc_config_to_delete)
-    #             session.commit()
-    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
-    #         else:
-    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
-    #
-    #     except Exception as e:
-    #         session.rollback()
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
-    #
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the IPCConfig table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[IPCConfig]: A list of IPCConfig objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(cls)  # Start building the query
-    #         # Dynamically add filters based on the keys in filter_dict
-    #         for key, value in data_dict.items():
-    #             if hasattr(cls, key):  # Check if the attribute exists on the model
-    #                 column = getattr(cls, key)
-    #                 query = query.filter(column==value)
-    #
-    #         return query.all()  # Return all matching records as a list
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update IPCConfig: {e}")
-
 
 class ControllerConfig(BaseOperations, Base):
     __tablename__ = "controller_config"
@@ -297,54 +249,6 @@ class ControllerConfig(BaseOperations, Base):
         except Exception as e:
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
-
-    # @classmethod
-    # def delete_data(cls, session, data_id):
-    #     """
-    #     Delete the ControllerConfig table using a dictionary.
-    #
-    #     Args:
-    #         session: SQLAlchemy session object.
-    #         data_id: the id of data recode in ControllerConfig table to be deleted.
-    #     """
-    #     try:
-    #         # Retrieve the record
-    #         controller_config_to_delete = session.get(cls, data_id)
-    #         if controller_config_to_delete:
-    #             session.delete(controller_config_to_delete)
-    #             session.commit()
-    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
-    #         else:
-    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
-    #
-    #     except Exception as e:
-    #         session.rollback()
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
-    #
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the ControllerConfig table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[ControllerConfig]: A list of ControllerConfig objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(cls)  # Start building the query
-    #         # Dynamically add filters based on the keys in filter_dict
-    #         for key, value in data_dict.items():
-    #             if hasattr(cls, key):  # Check if the attribute exists on the model
-    #                 column = getattr(cls, key)
-    #                 query = query.filter(column==value)
-    #
-    #         return query.all()  # Return all matching records as a list
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
 class WorkstationConfig(BaseOperations, Base):
@@ -436,54 +340,6 @@ class WorkstationConfig(BaseOperations, Base):
         except Exception as e:
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
-
-    # @classmethod
-    # def delete_data(cls, session, data_id):
-    #     """
-    #     Delete the WorkstationConfig table using a dictionary.
-    #
-    #     Args:
-    #         session: SQLAlchemy session object.
-    #         data_id: the id of data recode in WorkstationConfig table to be deleted.
-    #     """
-    #     try:
-    #         # Retrieve the record
-    #         workstation_config_to_delete = session.get(cls, data_id)
-    #         if workstation_config_to_delete:
-    #             session.delete(workstation_config_to_delete)
-    #             session.commit()
-    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
-    #         else:
-    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
-    #
-    #     except Exception as e:
-    #         session.rollback()
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
-    #
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the WorkstationConfig table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[WorkstationConfig]: A list of WorkstationConfig objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(cls)  # Start building the query
-    #         # Dynamically add filters based on the keys in filter_dict
-    #         for key, value in data_dict.items():
-    #             if hasattr(cls, key):  # Check if the attribute exists on the model
-    #                 column = getattr(cls, key)
-    #                 query = query.filter(column==value)
-    #
-    #         return query.all()  # Return all matching records as a list
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
 class CommunicationConfig(BaseOperations, Base):
@@ -752,54 +608,6 @@ class IPCPerformance(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    # @classmethod
-    # def delete_data(cls, session, data_id):
-    #     """
-    #     Delete the IPCPerformance table using a dictionary.
-    #
-    #     Args:
-    #         session: SQLAlchemy session object.
-    #         data_id: the id of data recode in IPCPerformance table to be deleted.
-    #     """
-    #     try:
-    #         # Retrieve the record
-    #         ipc_performance_config_to_delete = session.get(cls, data_id)
-    #         if ipc_performance_config_to_delete:
-    #             session.delete(ipc_performance_config_to_delete)
-    #             session.commit()
-    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
-    #         else:
-    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
-    #
-    #     except Exception as e:
-    #         session.rollback()
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
-    #
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the IPCPerformance table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[IPCPerformance]: A list of IPCPerformance objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(cls)  # Start building the query
-    #         # Dynamically add filters based on the keys in filter_dict
-    #         for key, value in data_dict.items():
-    #             if hasattr(cls, key):  # Check if the attribute exists on the model
-    #                 column = getattr(cls, key)
-    #                 query = query.filter(column == value)
-    #
-    #         return query.all()  # Return all matching records as a list
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
-
 
 class SimulationResult(BaseOperations, Base):
     __tablename__ = "simulation_result"
@@ -982,54 +790,6 @@ class SimulationResult(BaseOperations, Base):
         except Exception as e:
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
-
-    # @classmethod
-    # def delete_data(cls, session, data_id):
-    #     """
-    #     Delete the SimulationResult table using a dictionary.
-    #
-    #     Args:
-    #         session: SQLAlchemy session object.
-    #         data_id: the id of data recode in SimulationResult table to be deleted.
-    #     """
-    #     try:
-    #         # Retrieve the record
-    #         ipc_config_to_delete = session.get(cls, data_id)
-    #         if ipc_config_to_delete:
-    #             session.delete(ipc_config_to_delete)
-    #             session.commit()
-    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
-    #         else:
-    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
-    #
-    #     except Exception as e:
-    #         session.rollback()
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
-    #
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the SimulationResult table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[SimulationResult]: A list of SimulationResult objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(cls)  # Start building the query
-    #         # Dynamically add filters based on the keys in filter_dict
-    #         for key, value in data_dict.items():
-    #             if hasattr(cls, key):  # Check if the attribute exists on the model
-    #                 column = getattr(cls, key)
-    #                 query = query.filter(column == value)
-    #
-    #         return query.all()  # Return all matching records as a list
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
 class TableFactory:
