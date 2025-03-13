@@ -44,9 +44,8 @@ class BaseOperations:
         logger.error(f"Failed to process {context_data}: {exception}")
 
     @staticmethod
-    def __to_dict(records):
+    def _records_to_dict(records):
         return {column.key: getattr(records, column.key) for column in sql_inspect(records).mapper.column_attrs}
-
 
     @classmethod
     def delete_data(cls, session: Session, data_id: int):
@@ -94,7 +93,7 @@ class BaseOperations:
 
             results = query.all()  # Fetch all matching records
 
-            return [cls.__to_dict(record) for record in results]
+            return [cls._records_to_dict(record) for record in results]
 
         except Exception as e:
             cls._handle_exception(session, e, data_dict)
@@ -804,6 +803,50 @@ class SimulationResult(BaseOperations, Base):
         except Exception as e:
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
+
+    @classmethod
+    def query_data(cls, session: Session, data_dict: dict):
+        """
+        Query the table corresponding to the class based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List: A list of records matching the filter conditions.
+        """
+        try:
+            query = session.query(cls).join(IPCPerformance).join(IPCConfig)  # Start building the query
+            for key, value in data_dict.items():
+                if hasattr(cls, key):  # Dynamically filter based on column names
+                    column = getattr(cls, key)
+                    # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
+                    if isinstance(column.type, String) and isinstance(value, str):
+                        query = query.filter(column.like(f"%{value}%"))
+                    else:
+                        query = query.filter(column == value)
+
+            results = query.all()  # Fetch all matching records
+
+            # return [cls.__to_dict(record) for record in results]
+            # return_result = []
+            # for simulation in results:
+            #     result = {"simulation_result": (BaseOperations._records_to_dict(simulation)), "ipc_performance": []}
+            #     for perf in simulation.ipc_performance:
+            #         result["ipc_performance"].append(BaseOperations._records_to_dict(perf))
+            #     return_result.append(result)
+
+            return [
+                {
+                    "simulation_result": BaseOperations._records_to_dict(simulation),
+                    "ipc_performance": [BaseOperations._records_to_dict(perf) for perf in simulation.ipc_performance]
+                }
+                for simulation in results
+            ]
+
+        except Exception as e:
+            cls._handle_exception(session, e, data_dict)
 
 
 class TableFactory:

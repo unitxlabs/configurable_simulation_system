@@ -395,9 +395,12 @@ def simulation_result_query_data_test(data_id=None):
         "min_cortex_infer_time": 0.924000024795532,
         "avg_cortex_infer_time": 0.957632112662529,
 
-        "ipc_performance_ids": [],
+        "ipc_performance_ids": [7],
         "core_allocation": "prod service: 0, 1, 2, 3, 4, 5, 6, 7\nprod ui: 16, 17, 18, 19"
-                           "\ncortex: 8, 9, 10, 11, 12, 13, 14\noptix: 20, 21, 22, 23"
+                           "\ncortex: 8, 9, 10, 11, 12, 13, 14\noptix: 20, 21, 22, 23",
+
+        "model_size": "5",
+        "network_architecture": "V",
 
     }
     query_data = database_test.query_data(table_name="simulation_result", data_dict=test_data_dict)
@@ -456,16 +459,16 @@ if __name__ == "__main__":
 
     # new_ipc_performance_id = ipc_performance_add_data_test()
     # print(f"new_ipc_performance_id: {new_ipc_performance_id}")
-    new_ipc_performance_id = 7
+    # new_ipc_performance_id = 7
     # ipc_performance_update_data_test(new_ipc_performance_id)
-    ipc_performance_query_data_test(new_ipc_performance_id)
+    # ipc_performance_query_data_test(new_ipc_performance_id)
     # ipc_performance_delete_data_test(new_ipc_performance_id)
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    # new_simulation_result_id = 4
+    new_simulation_result_id = 4
     # simulation_result_update_data_test(new_simulation_result_id)
-    # simulation_result_query_data_test(new_simulation_result_id)
+    simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
 
