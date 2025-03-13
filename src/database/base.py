@@ -12,6 +12,7 @@ from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.inspection import inspect as sql_inspect
 
 from src.database import project_root_path
 from log import formatted_logging
@@ -36,6 +37,17 @@ class DetectionDimension(Enum):
 
 # 基类，提供通用的删除和查询方法
 class BaseOperations:
+    @staticmethod
+    def _handle_exception(session: Session, exception: Exception, context_data):
+        """Handle exceptions and roll back session."""
+        session.rollback()
+        logger.error(f"Failed to process {context_data}: {exception}")
+
+    @staticmethod
+    def __to_dict(records):
+        return {column.key: getattr(records, column.key) for column in sql_inspect(records).mapper.column_attrs}
+
+
     @classmethod
     def delete_data(cls, session: Session, data_id: int):
         """
@@ -74,16 +86,18 @@ class BaseOperations:
             for key, value in data_dict.items():
                 if hasattr(cls, key):  # Dynamically filter based on column names
                     column = getattr(cls, key)
-                    query = query.filter(column == value)
-            return query.all()  # Return all matching records as a list
+                    # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
+                    if isinstance(column.type, String) and isinstance(value, str):
+                        query = query.filter(column.like(f"%{value}%"))
+                    else:
+                        query = query.filter(column == value)
+
+            results = query.all()  # Fetch all matching records
+
+            return [cls.__to_dict(record) for record in results]
+
         except Exception as e:
             cls._handle_exception(session, e, data_dict)
-
-    @staticmethod
-    def _handle_exception(session: Session, exception: Exception, context_data):
-        """Handle exceptions and roll back session."""
-        session.rollback()
-        logger.error(f"Failed to process {context_data}: {exception}")
 
 
 class IPCConfig(BaseOperations, Base):
@@ -148,17 +162,17 @@ class IPCConfig(BaseOperations, Base):
                 raise ValueError("The dictionary must contain an 'id' key to identify the record.")
 
             # Retrieve the record
-            ipc_config = session.get(cls, data_dict["id"])
-            if not ipc_config:
+            update_data = session.get(cls, data_dict["id"])
+            if not update_data:
                 raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
-                if hasattr(ipc_config, key) and key != "id":  # Ensure only valid attributes are updated
-                    setattr(ipc_config, key, value)
+                if hasattr(update_data, key) and key != "id":
+                    setattr(update_data, key, value)
 
             # Commit the changes
-            session.add(ipc_config)
+            session.add(update_data)
             session.commit()
             logger.info(f"{cls.__name__} with id {data_dict['id']} updated successfully.")
 
@@ -232,17 +246,17 @@ class ControllerConfig(BaseOperations, Base):
                 raise ValueError("The dictionary must contain an 'id' key to identify the record.")
 
             # Retrieve the record
-            controller_config = session.get(cls, data_dict["id"])
-            if not controller_config:
+            update_data = session.get(cls, data_dict["id"])
+            if not update_data:
                 raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
-                if hasattr(controller_config, key) and key != "id":  # Ensure only valid attributes are updated
-                    setattr(controller_config, key, value)
+                if hasattr(update_data, key) and key != "id":  # Ensure only valid attributes are updated
+                    setattr(update_data, key, value)
 
             # Commit the changes
-            session.add(controller_config)
+            session.add(update_data)
             session.commit()
             logger.info(f"{cls.__name__} updated successfully with id {data_dict['id']}.")
 
@@ -323,17 +337,17 @@ class WorkstationConfig(BaseOperations, Base):
                 raise ValueError("The dictionary must contain an 'id' key to identify the record.")
 
             # Retrieve the record
-            workstation_config = session.get(cls, data_dict["id"])
-            if not workstation_config:
+            update_data = session.get(cls, data_dict["id"])
+            if not update_data:
                 raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
-                if hasattr(workstation_config, key) and key != "id":  # Ensure only valid attributes are updated
-                    setattr(workstation_config, key, value)
+                if hasattr(update_data, key) and key != "id":
+                    setattr(update_data, key, value)
 
             # Commit the changes
-            session.add(workstation_config)
+            session.add(update_data)
             session.commit()
             logger.info(f"{cls.__name__} with id {data_dict['id']} updated successfully.")
 
@@ -428,17 +442,17 @@ class CommunicationConfig(BaseOperations, Base):
                 raise ValueError(f"The dictionary communication_step {data_dict['communication_step']} not correct!.")
 
             # Retrieve the record
-            ipc_config = session.get(cls, data_dict["id"])
-            if not ipc_config:
+            update_data = session.get(cls, data_dict["id"])
+            if not update_data:
                 raise NoResultFound(f"No {cls.__name__}  found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
-                if hasattr(ipc_config, key) and key != "id":  # Ensure only valid attributes are updated
-                    setattr(ipc_config, key, value)
+                if hasattr(update_data, key) and key != "id":
+                    setattr(update_data, key, value)
 
             # Commit the changes
-            session.add(ipc_config)
+            session.add(update_data)
             session.commit()
             logger.info(f"{cls.__name__}  with id {data_dict['id']} updated successfully.")
 
@@ -590,17 +604,17 @@ class IPCPerformance(BaseOperations, Base):
                 raise ValueError("The dictionary must contain an 'id' key to identify the record.")
 
             # Retrieve the record
-            ipc_config = session.get(cls, data_dict["id"])
-            if not ipc_config:
+            update_data = session.get(cls, data_dict["id"])
+            if not update_data:
                 raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
-                if hasattr(ipc_config, key) and key != "id":  # Ensure only valid attributes are updated
-                    setattr(ipc_config, key, value)
+                if hasattr(update_data, key) and key != "id":
+                    setattr(update_data, key, value)
 
             # Commit the changes
-            session.add(ipc_config)
+            session.add(update_data)
             session.commit()
             logger.info(f"{cls.__name__} with id {data_dict['id']} updated successfully.")
 
@@ -773,17 +787,17 @@ class SimulationResult(BaseOperations, Base):
                 raise ValueError(f"The dictionary detection_dimension {data_dict['detection_dimension']} not correct!.")
 
             # Retrieve the record
-            ipc_config = session.get(cls, data_dict["id"])
-            if not ipc_config:
+            update_data = session.get(cls, data_dict["id"])
+            if not update_data:
                 raise NoResultFound(f"No {cls.__name__} found with id {data_dict['id']}")
 
             # Update fields dynamically
             for key, value in data_dict.items():
-                if hasattr(ipc_config, key) and key != "id":  # Ensure only valid attributes are updated
-                    setattr(ipc_config, key, value)
+                if hasattr(update_data, key) and key != "id":  # Ensure only valid attributes are updated
+                    setattr(update_data, key, value)
 
             # Commit the changes
-            session.add(ipc_config)
+            session.add(update_data)
             session.commit()
             logger.info(f"{cls.__name__} with id {data_dict['id']} updated successfully.")
 

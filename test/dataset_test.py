@@ -214,7 +214,7 @@ def ipc_performance_add_data_test():
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "ipc_config_id": 17,
-        "simulation_result_id": 1,
+        "simulation_result_id": 4,
         "model_size": "5MP",
         "network_architecture": "V4",
         "cpu_usage_avg": 20.2283806343907,
@@ -255,11 +255,11 @@ def ipc_performance_update_data_test(data_id=None):
 def ipc_performance_query_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
-        "id": data_id,
-        "ipc_config_id": 17,
-        "simulation_result_id": 1,
-        "model_size": "5MP",
-        "network_architecture": "V5",
+        # "id": data_id,
+        # "ipc_config_id": 17,
+        # "simulation_result_id": 1,
+        "model_size": "5",
+        "network_architecture": "V",
         "cpu_usage_avg": 20.2283806343907,
         "gpus_usage_avg": [25.7846410684474],
         "gpus_memory_usage_avg": [19.4115372089236],
@@ -401,6 +401,7 @@ def simulation_result_query_data_test(data_id=None):
 
     }
     query_data = database_test.query_data(table_name="simulation_result", data_dict=test_data_dict)
+
     print(query_data)
 
 
@@ -455,16 +456,16 @@ if __name__ == "__main__":
 
     # new_ipc_performance_id = ipc_performance_add_data_test()
     # print(f"new_ipc_performance_id: {new_ipc_performance_id}")
-    # new_ipc_performance_id = 4
+    new_ipc_performance_id = 7
     # ipc_performance_update_data_test(new_ipc_performance_id)
-    # ipc_performance_query_data_test(new_ipc_performance_id)
+    ipc_performance_query_data_test(new_ipc_performance_id)
     # ipc_performance_delete_data_test(new_ipc_performance_id)
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    new_simulation_result_id = 4
+    # new_simulation_result_id = 4
     # simulation_result_update_data_test(new_simulation_result_id)
-    simulation_result_query_data_test(new_simulation_result_id)
+    # simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
 
