@@ -428,6 +428,17 @@ def simulation_result_query_test():
         database_test.session.commit()
 
 
+def used_controller_id_test():
+    database_test = ConfigurableSimulationSystemDB()
+    used_controller_ids = database_test.get_used_controller_ids()
+    print(f"used_controller_ids: {used_controller_ids}")
+    controller_id = 1
+    is_controller_id_used = database_test.is_controller_used(controller_id)
+    print(f"is controller id {controller_id} used {is_controller_id_used}")
+    controller_usage = database_test.get_controller_usage()
+    print(f"controller_usage: {controller_usage}")
+
+
 if __name__ == "__main__":
     # new_ipc_config_id = ipc_config_add_data_test()
     # print(f"new_ipc_config_id: {new_ipc_config_id}")
@@ -466,12 +477,13 @@ if __name__ == "__main__":
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    new_simulation_result_id = 4
+    # new_simulation_result_id = 4
     # simulation_result_update_data_test(new_simulation_result_id)
-    simulation_result_query_data_test(new_simulation_result_id)
+    # simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
-
     # simulation_result_query_test()
+
+    used_controller_id_test()
 
     print(f"Done")

@@ -961,5 +961,21 @@ class ConfigurableSimulationSystemDB:
         except Exception as e:
             logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
 
+    def get_used_controller_ids(self):
+        controller_ids = self.session.query(WorkstationConfig.controller_config_id).distinct().all()
+        return [cid[0] for cid in controller_ids]  # 转换成 ID 列表
+
+    def is_controller_used(self, controller_id: int):
+        return self.session.query(WorkstationConfig).filter_by(controller_config_id=controller_id).first() is not None
+
+    def get_controller_usage(self):
+        # 列表 [(controller_id, workstation_id), ...]
+        results = self.session.query(
+            ControllerConfig.id, WorkstationConfig.id
+        ).join(WorkstationConfig, ControllerConfig.id == WorkstationConfig.controller_config_id).all()
+
+        return results
+
+
 
 
