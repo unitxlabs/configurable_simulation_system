@@ -6,7 +6,7 @@ import json
 import inspect
 from enum import Enum
 from sqlalchemy import (create_engine, Column, DateTime, Integer, String, Text, ARRAY, Float,
-                        Boolean, ForeignKey, select)
+                        Boolean, ForeignKey, select, distinct)
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
@@ -975,6 +975,28 @@ class ConfigurableSimulationSystemDB:
         ).join(WorkstationConfig, ControllerConfig.id == WorkstationConfig.controller_config_id).all()
 
         return results
+
+    def get_used_cpu(self):
+        # 查询去重后的CPU和GPU配置
+        results = self.session.query(distinct(IPCConfig.cpu)).join(
+            IPCPerformance, IPCPerformance.ipc_config_id == IPCConfig.id
+        ).join(
+            SimulationResult, SimulationResult.ipc_performance_ids.any(IPCPerformance.id)
+        ).all()
+
+        return [cpu for (cpu,) in results]
+
+    def get_used_gpus(self):
+        # 查询去重的gpus信息
+        result = self.session.query(distinct(IPCConfig.gpus)).join(
+            IPCPerformance, IPCPerformance.ipc_config_id == IPCConfig.id
+        ).join(
+            SimulationResult, SimulationResult.ipc_performance_ids.any(IPCPerformance.id)
+        ).all()
+
+        # 返回结果中的GPU列表
+        return [gpus for (gpus,) in result]
+
 
 
 

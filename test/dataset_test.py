@@ -9,7 +9,7 @@ def ipc_config_add_data_test():
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "name": "us_enterprise",
-        "cpu": "13-i7",
+        "cpu": "13-i8",
         "gpus": ["4080", "4080"],
         "ram": "test_ram",
         "ssds": ["test_ssd1", "test_ssd2"],
@@ -403,7 +403,7 @@ def simulation_result_query_data_test(data_id=None):
         "network_architecture": "V",
 
     }
-    query_data = database_test.query_data(table_name="simulation_result", data_dict=test_data_dict)
+    query_data = database_test.query_data(table_name="simulation_result", data_dict={})
 
     print(query_data)
 
@@ -437,6 +437,15 @@ def used_controller_id_test():
     print(f"is controller id {controller_id} used {is_controller_id_used}")
     controller_usage = database_test.get_controller_usage()
     print(f"controller_usage: {controller_usage}")
+
+
+def used_cpu_gpus_test():
+    database_test = ConfigurableSimulationSystemDB()
+    used_cpus = database_test.get_used_cpu()
+    print(f"used_cpus: {used_cpus}")
+
+    used_gpus = database_test.get_used_gpus()
+    print(f"used_cpus: {used_gpus}")
 
 
 if __name__ == "__main__":
@@ -477,13 +486,15 @@ if __name__ == "__main__":
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    # new_simulation_result_id = 4
+    new_simulation_result_id = 4
     # simulation_result_update_data_test(new_simulation_result_id)
-    # simulation_result_query_data_test(new_simulation_result_id)
+    simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
     # simulation_result_query_test()
 
-    used_controller_id_test()
+    # used_controller_id_test()
+
+    # used_cpu_gpus_test()
 
     print(f"Done")
