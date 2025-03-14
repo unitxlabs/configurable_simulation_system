@@ -403,7 +403,7 @@ def simulation_result_query_data_test(data_id=None):
         "network_architecture": "V",
 
     }
-    query_data = database_test.query_data(table_name="simulation_result", data_dict=test_data_dict)
+    query_data = database_test.query_data(table_name="simulation_result", data_dict={})
 
     print(query_data)
 
@@ -486,15 +486,15 @@ if __name__ == "__main__":
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    # new_simulation_result_id = 4
+    new_simulation_result_id = 4
     # simulation_result_update_data_test(new_simulation_result_id)
-    # simulation_result_query_data_test(new_simulation_result_id)
+    simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
     # simulation_result_query_test()
 
     # used_controller_id_test()
 
-    used_cpu_test()
+    # used_cpu_gpus_test()
 
     print(f"Done")
