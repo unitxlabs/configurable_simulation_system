@@ -9,7 +9,7 @@ def ipc_config_add_data_test():
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "name": "us_enterprise",
-        "cpu": "13-i7",
+        "cpu": "13-i8",
         "gpus": ["4080", "4080"],
         "ram": "test_ram",
         "ssds": ["test_ssd1", "test_ssd2"],
@@ -439,6 +439,15 @@ def used_controller_id_test():
     print(f"controller_usage: {controller_usage}")
 
 
+def used_cpu_gpus_test():
+    database_test = ConfigurableSimulationSystemDB()
+    used_cpus = database_test.get_used_cpu()
+    print(f"used_cpus: {used_cpus}")
+
+    used_gpus = database_test.get_used_gpus()
+    print(f"used_cpus: {used_gpus}")
+
+
 if __name__ == "__main__":
     # new_ipc_config_id = ipc_config_add_data_test()
     # print(f"new_ipc_config_id: {new_ipc_config_id}")
@@ -484,6 +493,8 @@ if __name__ == "__main__":
 
     # simulation_result_query_test()
 
-    used_controller_id_test()
+    # used_controller_id_test()
+
+    used_cpu_test()
 
     print(f"Done")
