@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from backend.api.v1.schemas import DataResponse, CommonResponse
-from sqlalchemy.orm import Session
-from backend.database import get_db
 from typing import Optional
-from backend.database import db_instance
+from src.database.base import ConfigurableSimulationSystemDB
 
 dataRouter = APIRouter()
 
@@ -19,8 +17,9 @@ def get_data_list(
     material_inference_times: Optional[int] = Query(None, description="素材推理次数"),
     model_count: Optional[int] = Query(None, description="模型数量"),
     defect_count: Optional[int] = Query(None, description="缺陷数量"),
-    db: Session = Depends(get_db),
 ):
+    db_instance = ConfigurableSimulationSystemDB()
+
     # todo 获取数据
     print(
         {
@@ -36,6 +35,13 @@ def get_data_list(
         }
     )
     query_data = db_instance.query_data(table_name="simulation_result", data_dict={})
+    print(query_data)
+    return CommonResponse(msg="", data=query_data)
+
+
+@dataRouter.get("/select", response_model=CommonResponse)
+def get_data_select():
+    query_data = db_instance.query_data(table_name="ipc_config", data_dict={})
     print(query_data)
     data = [
         DataResponse(

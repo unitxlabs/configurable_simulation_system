@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 import requests
-from backend.database import get_db
 from backend.api.v1.schemas import ControllerListResponse, CommonResponse
 from backend.logger import Logger
 
