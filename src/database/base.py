@@ -179,6 +179,28 @@ class IPCConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
+    @classmethod
+    def delete_data(cls, session: Session, data_id: int):
+        """
+        Delete a record from the table corresponding to the class.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_id (int): The id of the data record to be deleted.
+        """
+        try:
+            # 查询IPCPerformance中是否有引用该IPCConfig的记录
+            ipc_performance = session.query(IPCPerformance).filter(
+                IPCPerformance.ipc_config_id == data_id).first()
+
+            if ipc_performance:
+                # 如果找到引用，不能删除并给出提示
+                logger.warning(f"IPCConfig with ID {data_id} is in use by IPCPerformance and cannot be deleted.")
+            else:
+                super().delete_data(session=session, data_id=data_id)
+        except Exception as e:
+            cls._handle_exception(session, e, data_id)
+
 
 class ControllerConfig(BaseOperations, Base):
     __tablename__ = "controller_config"
@@ -620,6 +642,28 @@ class IPCPerformance(BaseOperations, Base):
         except Exception as e:
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
+
+    @classmethod
+    def delete_data(cls, session: Session, data_id: int):
+        """
+        Delete a record from the table corresponding to the class.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_id (int): The id of the data record to be deleted.
+        """
+        try:
+            # 查询IPCPerformance中是否有引用该IPCConfig的记录
+            simulation_result = session.query(SimulationResult).filter(
+                SimulationResult.ipc_performance_ids.any(data_id)).first()
+
+            if simulation_result:
+                # 如果找到引用，不能删除并给出提示
+                logger.warning(f"IPCPerformance with ID {data_id} is in use by SimulationResult and cannot be deleted.")
+            else:
+                super().delete_data(session=session, data_id=data_id)
+        except Exception as e:
+            cls._handle_exception(session, e, data_id)
 
 
 class SimulationResult(BaseOperations, Base):
