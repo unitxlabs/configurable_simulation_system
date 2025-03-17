@@ -161,6 +161,7 @@ def workstation_config_delete_data_test(data_id=None):
 def communication_config_add_data_test():
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
+        "name": "test",
         "part_type": "test",
         "part_interval": 2.8,
         "communication_type": 0,
@@ -177,6 +178,7 @@ def communication_config_update_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "id": data_id,
+        "name": "test",
         "part_type": "test",
         "part_interval": 2.9,
         "communication_type": 0,
@@ -192,6 +194,7 @@ def communication_config_query_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "id": data_id,
+        "name": "test",
         "part_type": "test",
         "part_interval": 2.9,
         "communication_type": 0,
@@ -470,11 +473,11 @@ if __name__ == "__main__":
     # workstation_config_query_data_test(new_workstation_config_id)
     # workstation_config_delete_data_test(new_workstation_config_id)
 
-    # new_communication_config_id = communication_config_add_data_test()
-    # print(f"new_communication_config_id: {new_communication_config_id}")
+    new_communication_config_id = communication_config_add_data_test()
+    print(f"new_communication_config_id: {new_communication_config_id}")
     # new_communication_config_id = 1
-    # communication_config_update_data_test(new_communication_config_id)
-    # communication_config_query_data_test(new_communication_config_id)
+    communication_config_update_data_test(new_communication_config_id)
+    communication_config_query_data_test(new_communication_config_id)
     # communication_config_delete_data_test(new_communication_config_id)
 
     # new_ipc_performance_id = ipc_performance_add_data_test()
@@ -486,9 +489,9 @@ if __name__ == "__main__":
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    new_simulation_result_id = 4
+    # new_simulation_result_id = 4
     # simulation_result_update_data_test(new_simulation_result_id)
-    simulation_result_query_data_test(new_simulation_result_id)
+    # simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
     # simulation_result_query_test()
