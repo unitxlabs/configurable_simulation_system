@@ -441,6 +441,9 @@ def used_controller_id_test():
     controller_usage = database_test.get_controller_usage()
     print(f"controller_usage: {controller_usage}")
 
+    all_controller_ids = database_test.get_all_controller_ids()
+    print(f"all_controller_ids: {all_controller_ids}")
+
 
 def used_cpu_gpus_test():
     database_test = ConfigurableSimulationSystemDB()
@@ -473,11 +476,11 @@ if __name__ == "__main__":
     # workstation_config_query_data_test(new_workstation_config_id)
     # workstation_config_delete_data_test(new_workstation_config_id)
 
-    new_communication_config_id = communication_config_add_data_test()
-    print(f"new_communication_config_id: {new_communication_config_id}")
+    # new_communication_config_id = communication_config_add_data_test()
+    # print(f"new_communication_config_id: {new_communication_config_id}")
     # new_communication_config_id = 1
-    communication_config_update_data_test(new_communication_config_id)
-    communication_config_query_data_test(new_communication_config_id)
+    # communication_config_update_data_test(new_communication_config_id)
+    # communication_config_query_data_test(new_communication_config_id)
     # communication_config_delete_data_test(new_communication_config_id)
 
     # new_ipc_performance_id = ipc_performance_add_data_test()
@@ -496,7 +499,7 @@ if __name__ == "__main__":
 
     # simulation_result_query_test()
 
-    # used_controller_id_test()
+    used_controller_id_test()
 
     # used_cpu_gpus_test()
 

@@ -1008,6 +1008,14 @@ class ConfigurableSimulationSystemDB:
         except Exception as e:
             logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
 
+    def get_all_controller_ids(self):
+        """
+        return the controller_config table id and the controller id
+        :return: [(controller_config_id, controller_id),]
+        """
+        results = self.session.query(ControllerConfig.id, ControllerConfig.controller_id).all()
+        return [(result.id, result.controller_id) for result in results]
+
     def get_used_controller_ids(self):
         controller_ids = self.session.query(WorkstationConfig.controller_config_id).distinct().all()
         return [cid[0] for cid in controller_ids]  # 转换成 ID 列表
