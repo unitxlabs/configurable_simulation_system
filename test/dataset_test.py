@@ -161,6 +161,7 @@ def workstation_config_delete_data_test(data_id=None):
 def communication_config_add_data_test():
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
+        "name": "test",
         "part_type": "test",
         "part_interval": 2.8,
         "communication_type": 0,
@@ -177,6 +178,7 @@ def communication_config_update_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "id": data_id,
+        "name": "test",
         "part_type": "test",
         "part_interval": 2.9,
         "communication_type": 0,
@@ -192,6 +194,7 @@ def communication_config_query_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "id": data_id,
+        "name": "test",
         "part_type": "test",
         "part_interval": 2.9,
         "communication_type": 0,
@@ -438,6 +441,9 @@ def used_controller_id_test():
     controller_usage = database_test.get_controller_usage()
     print(f"controller_usage: {controller_usage}")
 
+    all_controller_ids = database_test.get_all_controller_ids()
+    print(f"all_controller_ids: {all_controller_ids}")
+
 
 def used_cpu_gpus_test():
     database_test = ConfigurableSimulationSystemDB()
@@ -486,14 +492,14 @@ if __name__ == "__main__":
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    new_simulation_result_id = 4
+    # new_simulation_result_id = 4
     # simulation_result_update_data_test(new_simulation_result_id)
-    simulation_result_query_data_test(new_simulation_result_id)
+    # simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
     # simulation_result_query_test()
 
-    # used_controller_id_test()
+    used_controller_id_test()
 
     # used_cpu_gpus_test()
 

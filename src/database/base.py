@@ -380,6 +380,8 @@ class WorkstationConfig(BaseOperations, Base):
 class CommunicationConfig(BaseOperations, Base):
     __tablename__ = "communication_config"
     id = Column(Integer, primary_key=True, autoincrement=True)
+    # 通讯的名，比如用于哪个项目的仿真
+    name = Column(String, nullable=False)
     # 物料类型
     part_type = Column(String, nullable=False)
     # 物料时间间隔，单位S
@@ -402,7 +404,7 @@ class CommunicationConfig(BaseOperations, Base):
     modified_time = Column(DateTime, default=func.now(), onupdate=func.now())  # Set and update on modification
 
     __table_args__ = (UniqueConstraint(
-        "part_type", "part_interval", "communication_type", "communication_step", "workstation_count",
+        "name", "part_type", "part_interval", "communication_type", "communication_step", "workstation_count",
         "workstation_config_ids", "workstations_in_use", name='uq_communication_config'),)
 
     @classmethod
@@ -425,6 +427,7 @@ class CommunicationConfig(BaseOperations, Base):
                                  f"{data_dict['communication_step']} value not correct.")
                 else:
                     new_communication_config = CommunicationConfig(
+                        name=data_dict["name"],
                         part_type=data_dict["part_type"],
                         part_interval=data_dict["part_interval"],
                         communication_type=data_dict["communication_type"],
@@ -1004,6 +1007,14 @@ class ConfigurableSimulationSystemDB:
             logger.warning(f"Duplicate entry detected table {table_name} {data_id}.")
         except Exception as e:
             logger.error(f"{inspect.currentframe().f_code.co_name} failed {e}")
+
+    def get_all_controller_ids(self):
+        """
+        return the controller_config table id and the controller id
+        :return: [(controller_config_id, controller_id),]
+        """
+        results = self.session.query(ControllerConfig.id, ControllerConfig.controller_id).all()
+        return [(result.id, result.controller_id) for result in results]
 
     def get_used_controller_ids(self):
         controller_ids = self.session.query(WorkstationConfig.controller_config_id).distinct().all()
