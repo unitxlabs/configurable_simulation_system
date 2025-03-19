@@ -164,6 +164,7 @@ def communication_config_add_data_test():
         "name": "test",
         "part_type": "test",
         "part_interval": 2.8,
+        "part_start_to_ws1_interval": 1.5,
         "communication_type": 0,
         "communication_step": 1,
         "workstation_count": 1,
@@ -181,6 +182,7 @@ def communication_config_update_data_test(data_id=None):
         "name": "test",
         "part_type": "test",
         "part_interval": 2.9,
+        "part_start_to_ws1_interval": 1.5,
         "communication_type": 0,
         "communication_step": 1,
         "workstation_count": 1,
@@ -197,6 +199,7 @@ def communication_config_query_data_test(data_id=None):
         "name": "test",
         "part_type": "test",
         "part_interval": 2.9,
+        "part_start_to_ws1_interval": 1.5,
         "communication_type": 0,
         "communication_step": 1,
         "workstation_count": 1,
@@ -478,9 +481,9 @@ if __name__ == "__main__":
 
     # new_communication_config_id = communication_config_add_data_test()
     # print(f"new_communication_config_id: {new_communication_config_id}")
-    # new_communication_config_id = 1
-    # communication_config_update_data_test(new_communication_config_id)
-    # communication_config_query_data_test(new_communication_config_id)
+    new_communication_config_id = 1
+    communication_config_update_data_test(new_communication_config_id)
+    communication_config_query_data_test(new_communication_config_id)
     # communication_config_delete_data_test(new_communication_config_id)
 
     # new_ipc_performance_id = ipc_performance_add_data_test()
@@ -499,7 +502,7 @@ if __name__ == "__main__":
 
     # simulation_result_query_test()
 
-    used_controller_id_test()
+    # used_controller_id_test()
 
     # used_cpu_gpus_test()
 

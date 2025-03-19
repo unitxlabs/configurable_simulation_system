@@ -386,6 +386,8 @@ class CommunicationConfig(BaseOperations, Base):
     part_type = Column(String, nullable=False)
     # 物料时间间隔，单位S
     part_interval = Column(Float, nullable=False)
+    # part start 到第一个工位的距离，用时间间隔表示，单位S
+    part_start_to_ws1_interval = Column(Float, nullable=False)
     # 通讯的类型，定拍还是飞拍
     communication_type = Column(Integer, nullable=False)
     # 握手步数，设计支持2步和4步， 在定拍的时候需要，飞拍不需要
@@ -404,8 +406,9 @@ class CommunicationConfig(BaseOperations, Base):
     modified_time = Column(DateTime, default=func.now(), onupdate=func.now())  # Set and update on modification
 
     __table_args__ = (UniqueConstraint(
-        "name", "part_type", "part_interval", "communication_type", "communication_step", "workstation_count",
-        "workstation_config_ids", "workstations_in_use", name='uq_communication_config'),)
+        "name", "part_type", "part_interval", "part_start_to_ws1_interval", "communication_type",
+        "communication_step", "workstation_count", "workstation_config_ids", "workstations_in_use",
+        name='uq_communication_config'),)
 
     @classmethod
     def add_data(cls, session, data_dict):
@@ -430,6 +433,7 @@ class CommunicationConfig(BaseOperations, Base):
                         name=data_dict["name"],
                         part_type=data_dict["part_type"],
                         part_interval=data_dict["part_interval"],
+                        part_start_to_ws1_interval=data_dict["part_start_to_ws1_interval"],
                         communication_type=data_dict["communication_type"],
                         communication_step=data_dict["communication_step"],
                         workstation_count=data_dict["workstation_count"],
