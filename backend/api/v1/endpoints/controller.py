@@ -132,8 +132,12 @@ def delete_controller_data(
 
 @controllerRouter.get("/select", response_model=CommonResponse)
 def get_controller_select_data():
-    data = db_instance.query_data(table_name="controller_config", data_dict={})
-    return CommonResponse(msg="获取成功", data=data)
+    data = db_instance.get_all_controller_ids()
+    select_options = [
+        {"label": f"{controller_id}", "value": controller_config_id}
+        for controller_config_id, controller_id in data
+    ]
+    return CommonResponse(msg="获取成功", data=select_options)
 
 
 # @controllerRouter.get("/list", response_model=CommonResponse)
