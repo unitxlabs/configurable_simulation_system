@@ -25,8 +25,14 @@ Base = declarative_base()
 
 
 class CommunicationType(Enum):
+    # tecomX interaction handshake steps
     STATIC_SHOOTING = 0
     MOTION_SHOOTING = 1
+
+
+class CommunicationStep(Enum):
+    TWO_STEP = 2
+    FOUR_STEP = 4
 
 
 class DetectionDimension(Enum):
@@ -422,12 +428,13 @@ class CommunicationConfig(BaseOperations, Base):
         try:
             workstation_ids = set(session.scalars(select(WorkstationConfig.id)).all())
             if all(workstation_id in workstation_ids for workstation_id in data_dict["workstation_config_ids"]):
-                # if data_dict["communication_step"] == CommunicationType.MOTION_SHOOTING.value:
-                #     data_dict["communication_step"] = 0
+                if data_dict["communication_type"] == CommunicationType.MOTION_SHOOTING.value:
+                    data_dict["communication_step"] = CommunicationStep.TWO_STEP.value
 
-                if data_dict["communication_step"] not in CommunicationType._value2member_map_:
-                    logger.error(f"{inspect.currentframe().f_code.co_name} failed: data_dict[communication_step] "
-                                 f"{data_dict['communication_step']} value not correct.")
+                if (data_dict["communication_type"] == CommunicationType.STATIC_SHOOTING.value
+                        and data_dict["communication_step"] not in CommunicationStep._value2member_map_):
+                        logger.error(f"{inspect.currentframe().f_code.co_name} failed: data_dict[communication_step] "
+                                     f"{data_dict['communication_step']} value not correct.")
                 else:
                     new_communication_config = CommunicationConfig(
                         name=data_dict["name"],
@@ -466,7 +473,12 @@ class CommunicationConfig(BaseOperations, Base):
             # Ensure 'id' exists in the dictionary
             if "id" not in data_dict:
                 raise ValueError("The dictionary must contain an 'id' key to identify the record.")
-            if data_dict["communication_step"] not in CommunicationType._value2member_map_:
+
+            if data_dict["communication_type"] == CommunicationType.MOTION_SHOOTING.value:
+                data_dict["communication_step"] = CommunicationStep.TWO_STEP.value
+
+            if (data_dict["communication_type"] == CommunicationType.STATIC_SHOOTING.value
+                    and data_dict["communication_step"] not in CommunicationStep._value2member_map_):
                 raise ValueError(f"The dictionary communication_step {data_dict['communication_step']} not correct!.")
 
             # Retrieve the record
