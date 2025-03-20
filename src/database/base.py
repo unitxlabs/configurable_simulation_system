@@ -7,7 +7,7 @@ import inspect
 from enum import Enum
 from sqlalchemy import (create_engine, Column, DateTime, Integer, String, Text, ARRAY, Float,
                         Boolean, ForeignKey, select, distinct)
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session, joinedload
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
 from sqlalchemy.schema import UniqueConstraint
@@ -384,6 +384,43 @@ class WorkstationConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
+    @classmethod
+    def query_data(cls, session: Session, data_dict: dict):
+        """
+        Query the table corresponding to the class based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List: A list of records matching the filter conditions.
+        """
+        try:
+            query = session.query(cls).join(ControllerConfig)  # Start building the query
+            for key, value in data_dict.items():
+                if hasattr(cls, key):  # Dynamically filter based on column names
+                    column = getattr(cls, key)
+                    # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
+                    if isinstance(column.type, String) and isinstance(value, str):
+                        query = query.filter(column.like(f"%{value}%"))
+                    else:
+                        query = query.filter(column == value)
+
+            results = query.all()  # Fetch all matching records
+            return_result = []
+            for workstation in results:
+                result = {
+                    "workstation_config": BaseOperations._records_to_dict(workstation),
+                    "controller_config": BaseOperations._records_to_dict(workstation.controller_config)
+                }
+                return_result.append(result)
+
+            return return_result
+
+        except Exception as e:
+            cls._handle_exception(session, e, data_dict)
+
 
 class CommunicationConfig(BaseOperations, Base):
     __tablename__ = "communication_config"
@@ -502,30 +539,48 @@ class CommunicationConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the CommunicationConfig table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(cls)  # Start building the query
-    #         # Dynamically add filters based on the keys in filter_dict
-    #         for key, value in data_dict.items():
-    #             if hasattr(cls, key):  # Check if the attribute exists on the model
-    #                 column = getattr(cls, key)
-    #                 query = query.filter(column==value)
-    #
-    #         return query.all()  # Return all matching records as a list
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
+    @classmethod
+    def query_data(cls, session, data_dict):
+        """
+        Query the CommunicationConfig table based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
+        """
+        try:
+            query = session.query(CommunicationConfig). \
+                join(WorkstationConfig, WorkstationConfig.id.in_(CommunicationConfig.workstation_config_ids)).\
+                join(ControllerConfig, WorkstationConfig.controller_config_id == ControllerConfig.id)
+
+            # Dynamically apply filters from the dictionary
+            for key, value in data_dict.items():
+                if hasattr(CommunicationConfig, key):
+                    column = getattr(CommunicationConfig, key)
+                    query = query.filter(column == value)
+
+                elif hasattr(WorkstationConfig, key):
+                    column = getattr(WorkstationConfig, key)
+                    query = query.filter(column == value)
+
+                elif hasattr(ControllerConfig, key):
+                    column = getattr(ControllerConfig, key)
+                    query = query.filter(column == value)
+
+            # Explicitly load related entities
+            query = query.options(
+                # Eagerly load WorkstationConfig -> ControllerConfig relationship
+                joinedload(WorkstationConfig.controller_config)
+            )
+
+            # Return the results
+            return query.all()
+
+        except Exception as e:
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
 class IPCPerformance(BaseOperations, Base):
