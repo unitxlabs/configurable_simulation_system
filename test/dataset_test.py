@@ -60,6 +60,7 @@ def controller_config_add_data_test():
         "controller_id": "312513545",
         "controller_version": "V6",
         "cameras_id": ["15324551"],
+        "cameras_type": ["OACH0060UC"],
         "image_width": 4096,
         "image_height": 3000,
         "capture_images_count": 30,
@@ -76,6 +77,7 @@ def controller_config_update_data_test(data_id=None):
         "controller_id": "312513545",
         "controller_version": "V6",
         "cameras_id": ["15324552"],
+        "cameras_type": ["OACH0060UC"],
         "image_width": 4096,
         "image_height": 3000,
         "capture_images_count": 30,
@@ -91,6 +93,7 @@ def controller_config_query_data_test(data_id=None):
         "controller_id": "312513545",
         "controller_version": "V6",
         "cameras_id": ["15324552"],
+        "cameras_type": ["OACH0060UC"],
         "image_width": 4096,
         "image_height": 3000,
         "capture_images_count": 30,
@@ -467,10 +470,10 @@ if __name__ == "__main__":
 
     # new_controller_config_id = controller_config_add_data_test()
     # print(f"new_controller_config_id: {new_controller_config_id}")
-    # new_controller_config_id = 1
+    new_controller_config_id = 1
     # controller_config_update_data_test(new_controller_config_id)
     # controller_config_query_data_test(new_controller_config_id)
-    # controller_config_delete_data_test(new_controller_config_id)
+    controller_config_delete_data_test(new_controller_config_id)
 
     # new_workstation_config_id = workstation_config_add_data_test()
     # print(f"new_workstation_config_id: {new_workstation_config_id}")
@@ -481,9 +484,9 @@ if __name__ == "__main__":
 
     # new_communication_config_id = communication_config_add_data_test()
     # print(f"new_communication_config_id: {new_communication_config_id}")
-    new_communication_config_id = 1
-    communication_config_update_data_test(new_communication_config_id)
-    communication_config_query_data_test(new_communication_config_id)
+    # new_communication_config_id = 1
+    # communication_config_update_data_test(new_communication_config_id)
+    # communication_config_query_data_test(new_communication_config_id)
     # communication_config_delete_data_test(new_communication_config_id)
 
     # new_ipc_performance_id = ipc_performance_add_data_test()

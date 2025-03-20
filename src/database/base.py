@@ -185,27 +185,27 @@ class IPCConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    @classmethod
-    def delete_data(cls, session: Session, data_id: int):
-        """
-        Delete a record from the table corresponding to the class.
-
-        Args:
-            session (Session): The SQLAlchemy session object.
-            data_id (int): The id of the data record to be deleted.
-        """
-        try:
-            # 查询IPCPerformance中是否有引用该IPCConfig的记录
-            ipc_performance = session.query(IPCPerformance).filter(
-                IPCPerformance.ipc_config_id == data_id).first()
-
-            if ipc_performance:
-                # 如果找到引用，不能删除并给出提示
-                logger.warning(f"IPCConfig with ID {data_id} is in use by IPCPerformance and cannot be deleted.")
-            else:
-                super().delete_data(session=session, data_id=data_id)
-        except Exception as e:
-            cls._handle_exception(session, e, data_id)
+    # @classmethod
+    # def delete_data(cls, session: Session, data_id: int):
+    #     """
+    #     Delete a record from the table corresponding to the class.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_id (int): The id of the data record to be deleted.
+    #     """
+    #     try:
+    #         # 查询IPCPerformance中是否有引用该IPCConfig的记录
+    #         ipc_performance = session.query(IPCPerformance).filter(
+    #             IPCPerformance.ipc_config_id == data_id).first()
+    #
+    #         if ipc_performance:
+    #             # 如果找到引用，不能删除并给出提示
+    #             logger.warning(f"IPCConfig with ID {data_id} is in use by IPCPerformance and cannot be deleted.")
+    #         else:
+    #             super().delete_data(session=session, data_id=data_id)
+    #     except Exception as e:
+    #         cls._handle_exception(session, e, data_id)
 
 
 class ControllerConfig(BaseOperations, Base):
@@ -215,6 +215,7 @@ class ControllerConfig(BaseOperations, Base):
     controller_version = Column(String, nullable=False)
     # 控制器连接的相机的ID，数组，因为V6最多可以连接2个相机
     cameras_id = Column(ARRAY(String), nullable=False)  # Array of String
+    cameras_type = Column(ARRAY(String), nullable=False)  # Array of String
     image_width = Column(Integer, nullable=False)
     image_height = Column(Integer, nullable=False)
     image_channel = Column(Integer, nullable=True)
@@ -227,8 +228,8 @@ class ControllerConfig(BaseOperations, Base):
     workstation_config = relationship('WorkstationConfig', back_populates='controller_config', cascade="all, delete-orphan")
 
     __table_args__ = (UniqueConstraint(
-        "controller_id", "controller_version", "cameras_id", "image_width", "image_height", "image_channel",
-        "capture_images_count", "network_inference_count", name='uq_controller_config'),)
+        "controller_id", "controller_version", "cameras_id", "cameras_type", "image_width", "image_height",
+        "image_channel", "capture_images_count", "network_inference_count", name='uq_controller_config'),)
 
     @classmethod
     def add_data(cls, session, data_dict):
@@ -244,6 +245,7 @@ class ControllerConfig(BaseOperations, Base):
                 controller_id=data_dict["controller_id"],
                 controller_version=data_dict["controller_version"],
                 cameras_id=data_dict["cameras_id"],
+                cameras_type=data_dict["cameras_type"],
                 image_width=data_dict["image_width"],
                 image_height=data_dict["image_height"],
                 image_channel=data_dict.setdefault("image_channel", 3),
@@ -500,29 +502,6 @@ class CommunicationConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    # @classmethod
-    # def delete_data(cls, session, data_id):
-    #     """
-    #     Delete the CommunicationConfig table using a dictionary.
-    #
-    #     Args:
-    #         session: SQLAlchemy session object.
-    #         data_id: the id of data recode in CommunicationConfig table to be deleted.
-    #     """
-    #     try:
-    #         # Retrieve the record
-    #         communication_config_to_delete = session.get(cls, data_id)
-    #         if communication_config_to_delete:
-    #             session.delete(communication_config_to_delete)
-    #             session.commit()
-    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
-    #         else:
-    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
-    #
-    #     except Exception as e:
-    #         session.rollback()
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
-    #
     # @classmethod
     # def query_data(cls, session, data_dict):
     #     """
