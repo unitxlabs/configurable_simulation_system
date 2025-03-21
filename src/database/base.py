@@ -623,7 +623,6 @@ class CommunicationConfig(BaseOperations, Base):
             # Step 4: Filter CommunicationConfig based on WorkstationConfig
             filtered_communication_configs = []
             for comm_config in queried_communication_configs:
-                # if any(ws_id in queried_workstation_config_ids for ws_id in comm_config.workstation_config_ids):
                 if set(comm_config.workstation_config_ids).issubset(queried_workstation_config_ids):
                     result = {"communication_config": (BaseOperations._records_to_dict(comm_config)),
                               "workstation_configs": []}
@@ -1007,8 +1006,19 @@ class SimulationResult(BaseOperations, Base):
             List: A list of records matching the filter conditions.
         """
         try:
-            query = session.query(cls).join(IPCPerformance).join(IPCConfig)  # Start building the query
+            # Step 1: Separate filters for SimulationResult and CommunicationConfig
+            filter_simulation = {}
+            filter_communication = {}
+
             for key, value in data_dict.items():
+                if hasattr(SimulationResult, key) or hasattr(IPCPerformance, key) or hasattr(IPCConfig, key):
+                    filter_simulation[key] = value
+                elif hasattr(WorkstationConfig, key) or hasattr(ControllerConfig, key) or hasattr(CommunicationConfig, key):
+                    filter_communication[key] = value
+
+            # Step 2: Query SimulationResult based on filter_simulation
+            query = session.query(cls).join(IPCPerformance).join(IPCConfig)  # Start building the query
+            for key, value in filter_simulation.items():
                 if hasattr(cls, key):  # Dynamically filter based on column names
                     column = getattr(cls, key)
                     # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
@@ -1017,29 +1027,32 @@ class SimulationResult(BaseOperations, Base):
                     else:
                         query = query.filter(column == value)
 
-            results = query.all()  # Fetch all matching records
+            queried_simulation_results = query.all() # Fetch all matching records
 
-            # return [cls.__to_dict(record) for record in results]
-            return_result = []
-            for simulation in results:
-                result = {"simulation_result": (BaseOperations._records_to_dict(simulation)), "ipc_performances": []}
-                for perf in simulation.ipc_performance:
-                    result["ipc_performances"].append(
-                        {
-                            "ipc_performance": BaseOperations._records_to_dict(perf),
-                            "ipc_config": BaseOperations._records_to_dict(perf.ipc_config)
-                         }
-                    )
-                return_result.append(result)
-            return return_result
+            # Step 3: Query CommunicationConfig based on filter_communication
+            queried_communication_configs = CommunicationConfig.query_data(session, filter_communication)
+            queried_communication_config_ids = {ws["communication_config"]["id"] for ws in queried_communication_configs}
 
-            # return [
-            #     {
-            #         "simulation_result": BaseOperations._records_to_dict(simulation),
-            #         "ipc_performance": [BaseOperations._records_to_dict(perf) for perf in simulation.ipc_performance]
-            #     }
-            #     for simulation in results
-            # ]
+            # Step 4: Filter SimulationResult based on                 elif hasattr(WorkstationConfig, key) or hasattr(ControllerConfig, key) or hasattr(CommunicationConfig, key):
+            filtered_simulation_results = []
+            for simulation_result in queried_simulation_results:
+                if set(simulation_result.communication_config_ids).issubset(queried_communication_config_ids):
+                    result = {
+                        "simulation_result": (BaseOperations._records_to_dict(simulation_result)),
+                        "ipc_performances": [],
+                        "communication_configs": [],
+                    }
+                    for perf in simulation_result.ipc_performance:
+                        result["ipc_performances"].append(
+                            {
+                                "ipc_performance": BaseOperations._records_to_dict(perf),
+                                "ipc_config": BaseOperations._records_to_dict(perf.ipc_config)
+                             }
+                        )
+                    for com_id in simulation_result.communication_config_ids:
+                        result["communication_configs"].extend(CommunicationConfig.query_data(session, {"id": com_id}))
+                    filtered_simulation_results.append(result)
+            return filtered_simulation_results
 
         except Exception as e:
             cls._handle_exception(session, e, data_dict)
