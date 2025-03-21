@@ -29,7 +29,6 @@ def get_controller_list():
     controller_list = []
 
     for camera_id, camera_info in mapping.items():
-        print(camera_id, camera_info)
         # 获取 max_width 和 max_height
         max_width = camera_info.get("max_width", 0)
         max_height = camera_info.get("max_height", 0)
@@ -131,12 +130,35 @@ def delete_controller_data(
 
 
 @controllerRouter.get("/select", response_model=CommonResponse)
-def get_controller_select_data():
-    data = db_instance.get_all_controller_ids()
+def get_controller_select_data(
+    status: str = Query(None, description=""),
+):
+    dbData = db_instance.get_all_controller_ids()
     select_options = [
         {"label": f"{controller_id}", "value": controller_config_id}
-        for controller_config_id, controller_id in data
+        for controller_config_id, controller_id in dbData
     ]
+    if status:
+        url = "http://localhost:10001/perception/api/v1/hardware/all_cameras_controllers_mapping"
+
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # 如果状态码不是200，会抛出异常
+            data = response.json()
+        except requests.exceptions.RequestException:
+            raise HTTPException(status_code=503, detail="端口未开或无法连接到服务")
+        # 获取映射数据
+        mapping = data.get("mapping", {})
+        valid_controller_types = {
+            controller_type
+            for camera_info in mapping.values()
+            for controller_type in camera_info.keys()
+        }
+        select_options = [
+            option
+            for option in select_options
+            if option["label"] in valid_controller_types
+        ]
     return CommonResponse(msg="获取成功", data=select_options)
 
 

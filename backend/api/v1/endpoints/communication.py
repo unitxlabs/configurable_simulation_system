@@ -11,6 +11,8 @@ from typing import Optional
 
 communicationRouter = APIRouter()
 
+global_communication_data = {}
+
 
 @communicationRouter.get("/data", response_model=CommonResponse)
 def get_communication_data(
@@ -35,7 +37,7 @@ def get_communication_data(
 async def save(data: CommunicationSaveSettingsData):
     print(f"创建通讯:{data}")
     db_instance.add_data(table_name="communication_config", data_dict=data.dict())
-    Logger.log_action(f"创建通讯:{data}")
+    Logger.log_action(f"创建通讯:{data.dict()}")
     return CommonResponse(msg="创建成功", data={})
 
 
@@ -49,13 +51,41 @@ async def update(data: CommunicationUpdateSettingsData):
 @communicationRouter.post("/delete", response_model=CommonResponse)
 async def delete_communication_data(
     id: Optional[int] = None,
-    communication_id: Optional[int] = None,
+    communication_type: Optional[int] = None,
 ):
-    if id is None or communication_id is None:
+    if id is None or communication_type is None:
         raise HTTPException(
-            status_code=400, detail="Both 'id' and 'communication_id' must be provided."
+            status_code=400,
+            detail="Both 'id' and 'communication_type' must be provided.",
         )
 
     db_instance.delete_data(table_name="communication_config", data_id=id)
-    Logger.log_action(f"删除通讯ID为{id},communication_id为{communication_id}的通讯:")
+    Logger.log_action(f"删除通讯ID为{id},communication_type{communication_type}的通讯")
     return CommonResponse(msg="删除成功", data={})
+
+
+@communicationRouter.post("/apply", response_model=CommonResponse)
+async def apply(data: CommunicationUpdateSettingsData):
+    print(f"应用通讯:{data}")
+    if data.id <= 0:
+        id = db_instance.add_data(
+            table_name="communication_config", data_dict=data.dict()
+        )
+        if id is None:
+            raise HTTPException(
+                status_code=400,
+                detail="应用失败.",
+            )
+        data.id = id
+    global global_communication_data
+    global_communication_data = data.dict()
+    # Logger.log_action(f"应用通讯:{data.dict()}")
+    return CommonResponse(msg="应用通成功", data={})
+
+
+@communicationRouter.get("/applied_data", response_model=CommonResponse)
+async def get_applied_data():
+    data = {}
+    if global_communication_data:
+        data = global_communication_data
+    return CommonResponse(msg="获取成功", data=data)

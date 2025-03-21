@@ -7,6 +7,7 @@ class CommunicationSaveSettingsData(BaseModel):
     part_interval: float
     communication_type: int
     communication_step: int
+    part_start_to_ws1_interval: float
     workstation_count: int
     workstation_config_ids: list[int]
     workstations_in_use: list[bool]
@@ -19,6 +20,7 @@ class CommunicationUpdateSettingsData(BaseModel):
     part_interval: float
     communication_type: int
     communication_step: int
+    part_start_to_ws1_interval: float
     workstation_count: int
     workstation_config_ids: list[int]
     workstations_in_use: list[bool]
@@ -31,6 +33,7 @@ class CommunicationListResponse(BaseModel):
     part_interval: float
     communication_type: int
     communication_step: int
+    part_start_to_ws1_interval: float
     workstation_count: int
     workstation_config_ids: list[int]
     workstations_in_use: list[bool]

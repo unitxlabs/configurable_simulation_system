@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from backend.api.v1.schemas import DataResponse, CommonResponse
 from typing import Optional
-from src.database.base import ConfigurableSimulationSystemDB
+from backend.database import db_instance
 
 dataRouter = APIRouter()
 
@@ -18,8 +18,6 @@ def get_data_list(
     model_count: Optional[int] = Query(None, description="模型数量"),
     defect_count: Optional[int] = Query(None, description="缺陷数量"),
 ):
-    db_instance = ConfigurableSimulationSystemDB()
-
     # todo 获取数据
     print(
         {
@@ -34,27 +32,40 @@ def get_data_list(
             "defect_count": defect_count,
         }
     )
-    query_data = db_instance.query_data(table_name="simulation_result", data_dict={})
+    data_dict = {}
+    if cpu:
+        data_dict["cpu"] = cpu
+    if gpu:
+        data_dict["gpu"] = gpu.split(",")
+    if camera_count:
+        data_dict["camera_count"] = [camera_count]
+    if camera_resolution:
+        data_dict["camera_resolution"] = camera_resolution
+    if material_image_count:
+        data_dict["material_image_count"] = material_image_count
+    if material_inference_times:
+        data_dict["material_inference_times"] = [material_inference_times]
+    if model_count:
+        data_dict["model_count"] = model_count
+    if defect_count:
+        data_dict["defect_count"] = defect_count
+    query_data = db_instance.query_data(
+        table_name="simulation_result", data_dict=data_dict
+    )
     print(query_data)
     return CommonResponse(msg="", data=query_data)
 
 
 @dataRouter.get("/select", response_model=CommonResponse)
 def get_data_select():
-    query_data = db_instance.query_data(table_name="ipc_config", data_dict={})
-    print(query_data)
-    data = [
-        DataResponse(
-            id="1",
-            name="设备 A",
-            cpu="Intel i7",
-            gpu="NVIDIA RTX 3080",
-            camera_count=4,
-            camera_resolution="1920x1080",
-            material_image_count=1000,
-            material_inference_times=500,
-            model_count=5,
-            defect_count=3,
-        )
+    cpuData = db_instance.get_used_cpu()
+    cpu_select_options = [{"label": f"{cpu}", "value": cpu} for cpu in cpuData]
+    gpuData = db_instance.get_used_gpus()
+    gpu_select_options = [
+        {"label": f"{','.join(gpu)}", "value": ",".join(gpu)} for gpu in gpuData
     ]
-    return CommonResponse(msg="", data=data)
+    select_options = {
+        "cpu_select_options": cpu_select_options,
+        "gpu_select_options": gpu_select_options,
+    }
+    return CommonResponse(msg="获取成功", data=select_options)
