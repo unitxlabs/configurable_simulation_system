@@ -151,7 +151,8 @@ def workstation_config_query_data_test(data_id=None):
         "sequences_id": [0, 1, 2, 3],
         "sequences_interval": [10, 10, 10, 10],
 
-        "cameras_type": ["OACH0060UC", "OACH0080UC"],
+        "controller_version": "V6",
+        "cameras_type": ["OACH0060UC"],
     }
     query_data = database_test.query_data(table_name="workstation_config", data_dict=test_data_dict)
     print(query_data)
@@ -200,16 +201,19 @@ def communication_config_update_data_test(data_id=None):
 def communication_config_query_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
-        # "id": data_id,
-        # "name": "test",
-        # "part_type": "test",
-        # "part_interval": 2.9,
-        # "part_start_to_ws1_interval": 1.5,
+        "id": data_id,
+        "name": "test",
+        "part_type": "test",
+        "part_interval": 2.8,
+        "part_start_to_ws1_interval": 1.5,
         "communication_type": 0,
-        # "communication_step": 1,
-        # "workstation_count": 1,
-        # "workstation_config_ids": [1],
-        # "workstations_in_use": [True, False, False, False, False, False],
+        "communication_step": 2,
+        "workstation_count": 1,
+        "workstation_config_ids": [1],
+        "workstations_in_use": [True, False, False, False, False, False],
+
+        "controller_version": "V6",
+        "cameras_type": ["OACH0060UC"],
     }
     query_data = database_test.query_data(table_name="communication_config", data_dict=test_data_dict)
     print(query_data)

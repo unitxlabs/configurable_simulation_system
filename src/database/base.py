@@ -435,7 +435,6 @@ class WorkstationConfig(BaseOperations, Base):
             for key, value in data_dict.items():
                 if hasattr(cls, key):  # Dynamically filter based on column names
                     column = getattr(cls, key)
-                    column = getattr(cls, key)
                     # 特殊处理 cameras_type 数组
                     if key == "cameras_type" and isinstance(value, list):
                         # 使用 PostgreSQL 的 && 操作符检查数组是否有交集
@@ -578,48 +577,66 @@ class CommunicationConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the CommunicationConfig table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(CommunicationConfig). \
-    #             join(WorkstationConfig, WorkstationConfig.id.in_(CommunicationConfig.workstation_config_ids)).\
-    #             join(ControllerConfig, WorkstationConfig.controller_config_id == ControllerConfig.id)
-    #
-    #         # Dynamically apply filters from the dictionary
-    #         for key, value in data_dict.items():
-    #             if hasattr(CommunicationConfig, key):
-    #                 column = getattr(CommunicationConfig, key)
-    #                 query = query.filter(column == value)
-    #
-    #             elif hasattr(WorkstationConfig, key):
-    #                 column = getattr(WorkstationConfig, key)
-    #                 query = query.filter(column == value)
-    #
-    #             elif hasattr(ControllerConfig, key):
-    #                 column = getattr(ControllerConfig, key)
-    #                 query = query.filter(column == value)
-    #
-    #         # Explicitly load related entities
-    #         query = query.options(
-    #             # Eagerly load WorkstationConfig -> ControllerConfig relationship
-    #             joinedload(WorkstationConfig.controller_config)
-    #         )
-    #
-    #         # Return the results
-    #         return query.all()
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
+    @classmethod
+    def query_data(cls, session, data_dict):
+        """
+        Query the CommunicationConfig table based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
+        """
+        try:
+            # Step 1: Separate filters for CommunicationConfig and WorkstationConfig
+            filter_communication = {}
+            filter_workstation = {}
+
+            for key, value in data_dict.items():
+                if hasattr(CommunicationConfig, key):
+                    filter_communication[key] = value
+                elif hasattr(WorkstationConfig, key) or hasattr(ControllerConfig, key):
+                    filter_workstation[key] = value
+
+            # Step 2: Query CommunicationConfig based on filter_communication
+            query = session.query(CommunicationConfig)
+            for key, value in filter_communication.items():
+                column = getattr(CommunicationConfig, key)
+                query = query.filter(column == value)
+
+            queried_communication_configs = query.all()
+
+            # Step 3: Query WorkstationConfig based on filter_workstation
+            query = session.query(WorkstationConfig).join(ControllerConfig)
+            for key, value in filter_workstation.items():
+                if hasattr(WorkstationConfig, key):
+                    column = getattr(WorkstationConfig, key)
+                else:
+                    column = getattr(ControllerConfig, key)
+                query = query.filter(column == value)
+
+            queried_workstation_configs = WorkstationConfig.query_data(session, filter_workstation)
+            queried_workstation_config_ids = {ws["workstation_config"]["id"] for ws in queried_workstation_configs}
+
+            # Step 4: Filter CommunicationConfig based on WorkstationConfig
+            filtered_communication_configs = []
+            for comm_config in queried_communication_configs:
+                # if any(ws_id in queried_workstation_config_ids for ws_id in comm_config.workstation_config_ids):
+                if set(comm_config.workstation_config_ids).issubset(queried_workstation_config_ids):
+                    result = {"communication_config": (BaseOperations._records_to_dict(comm_config)),
+                              "workstation_configs": []}
+                    for workstation_config_id in comm_config.workstation_config_ids:
+                        result["workstation_configs"].extend(
+                            WorkstationConfig.query_data(session, {"id": workstation_config_id})
+                        )
+                    filtered_communication_configs.append(result)
+
+            return filtered_communication_configs
+
+        except Exception as e:
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
 class IPCPerformance(BaseOperations, Base):
