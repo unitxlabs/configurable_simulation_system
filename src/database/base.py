@@ -293,6 +293,40 @@ class ControllerConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
+    @classmethod
+    def query_data(cls, session: Session, data_dict: dict):
+        """
+        Query the table corresponding to the class based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List: A list of records matching the filter conditions.
+        """
+        try:
+            query = session.query(cls)  # Start building the query
+            for key, value in data_dict.items():
+                if hasattr(cls, key):  # Dynamically filter based on column names
+                    column = getattr(cls, key)
+                    # 特殊处理 cameras_type 数组
+                    if key == "cameras_type" and isinstance(value, list):
+                        # 使用 PostgreSQL 的 && 操作符检查数组是否有交集
+                        query = query.filter(column.op('&&')(value))
+                    # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
+                    elif isinstance(column.type, String) and isinstance(value, str):
+                        query = query.filter(column.like(f"%{value}%"))
+                    else:
+                        query = query.filter(column == value)
+
+            results = query.all()  # Fetch all matching records
+
+            return [cls._records_to_dict(record) for record in results]
+
+        except Exception as e:
+            cls._handle_exception(session, e, data_dict)
+
 
 class WorkstationConfig(BaseOperations, Base):
     __tablename__ = "workstation_config"
@@ -401,8 +435,13 @@ class WorkstationConfig(BaseOperations, Base):
             for key, value in data_dict.items():
                 if hasattr(cls, key):  # Dynamically filter based on column names
                     column = getattr(cls, key)
+                    column = getattr(cls, key)
+                    # 特殊处理 cameras_type 数组
+                    if key == "cameras_type" and isinstance(value, list):
+                        # 使用 PostgreSQL 的 && 操作符检查数组是否有交集
+                        query = query.filter(column.op('&&')(value))
                     # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
-                    if isinstance(column.type, String) and isinstance(value, str):
+                    elif isinstance(column.type, String) and isinstance(value, str):
                         query = query.filter(column.like(f"%{value}%"))
                     else:
                         query = query.filter(column == value)
