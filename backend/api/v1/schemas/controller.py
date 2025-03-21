@@ -5,6 +5,7 @@ class ControllerSettingsData(BaseModel):
     controller_id: str
     controller_version: str
     cameras_id: list[str]
+    cameras_type: str
     image_width: int
     image_height: int
     image_channel: int
@@ -17,6 +18,7 @@ class ControllerListResponse(BaseModel):
     controller_id: str
     controller_version: str
     cameras_id: list[str]
+    cameras_type: str
     image_width: int
     image_height: int
     image_channel: int

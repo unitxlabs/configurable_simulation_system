@@ -9,8 +9,47 @@ from backend.logger import Logger
 from typing import List
 from backend.database import db_instance
 from typing import Optional
+import importlib.util
+import os
+from pathlib import Path
 
+home_dir = Path.home()
 controllerRouter = APIRouter()
+
+config_path = f"{home_dir}/unitx_data/config/production.py"
+
+
+def load_config(config_path):
+    """动态加载 Python 配置文件"""
+    if not os.path.exists(config_path):
+        return []
+
+    spec = importlib.util.spec_from_file_location("config_module", config_path)
+    config_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config_module)
+
+    return config_module.imaging_config
+
+
+def get_controller_pic_count(controller_id: str):
+    imaging_config = load_config(config_path)
+    capture_images_count = 0
+    networks_inference_count = 0
+    for config in imaging_config:
+        for part in config.get("part_config", []):
+            if part.get("controller_port_id") == controller_id:
+                sequences = part.get("sequences", [])
+
+                for seq in sequences:
+                    repeat = seq.get("repeat", 0)
+                    cc_network_mapping = seq.get("cc_network_mapping", {})
+
+                    capture_images_count += repeat * len(cc_network_mapping.keys())
+                    networks_inference_count += repeat * sum(
+                        len(v) for v in cc_network_mapping.values()
+                    )
+
+    return capture_images_count, networks_inference_count
 
 
 @controllerRouter.get("/list", response_model=CommonResponse)
@@ -52,6 +91,9 @@ def get_controller_list():
                 )
                 if result:
                     has_version = True
+                    capture_images_count, networks_inference_count = (
+                        get_controller_pic_count(controller_id)
+                    )
                     controller_list.append(
                         ControllerListResponse(
                             controller_id=controller_id,  # 这里是控制器ID，例如 "/dev/ttyS3"
@@ -60,8 +102,9 @@ def get_controller_list():
                             image_width=max_width,
                             image_height=max_height,
                             image_channel=3,
-                            capture_images_count=11,
-                            network_inference_count=31,
+                            cameras_type="1",
+                            capture_images_count=capture_images_count,
+                            network_inference_count=networks_inference_count,
                             isActive=True,
                         )
                     )
@@ -75,8 +118,9 @@ def get_controller_list():
                     image_width=max_width,
                     image_height=max_height,
                     image_channel=3,
-                    capture_images_count=11,
-                    network_inference_count=31,
+                    cameras_type="1",
+                    capture_images_count=0,
+                    network_inference_count=0,
                     isActive=True,
                 )
             )
@@ -98,6 +142,7 @@ def get_controller_data(
     if cameras_id:
         data_dict["cameras_id"] = [cameras_id]
     data = db_instance.query_data(table_name="controller_config", data_dict=data_dict)
+    print(data)
     return CommonResponse(msg="获取成功", data=data)
 
 
