@@ -377,44 +377,38 @@ def simulation_result_query_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         # part information
-        # "id": data_id,
-        # "detection_dimension": 0,
-        # # "part_type": "test",
-        # "part_interval": 2.9,
-        # "total_image_count": 30,
-        # "total_inference_count": 40,
-        # "ng_type_count": 10,
-        # "each_ng_type_defect_count": 5,
-        # # # ipc information
-        # "ipc_count": 1,
-        # "ipcs_config_id": ["1"],
-        # # communication information
-        # "communication_config_ids": [1],
-        # "is_image_saving": False,
-        # # ipc process result
-        # "part_count": 302,
-        # "total_time_used": 300.422652244568,
-        # "fps": 30.1575128649901,
-        # # "mps": 30.1575128649901,
-        # "max_part_use_time": 1.09100008010864,
-        # "min_part_use_time": 0.924000024795532,
-        # "avg_part_use_time": 0.957632112662529,
-        # "max_image_capture_time": 1.09100008010864,
-        # "min_image_capture_time": 0.924000024795532,
-        # "avg_image_capture_time": 0.957632112662529,
-        # "max_cortex_infer_time": 1.09100008010864,
-        # "min_cortex_infer_time": 0.924000024795532,
-        # "avg_cortex_infer_time": 0.957632112662529,
-        #
-        # "ipc_performance_ids": [4],
-        # "core_allocation": "prod service: 0, 1, 2, 3, 4, 5, 6, 7\nprod ui: 16, 17, 18, 19"
-        #                    "\ncortex: 8, 9, 10, 11, 12, 13, 14\noptix: 20, 21, 22, 23",
-        #
-        # "model_size": "5",
-        # "network_architecture": "V",
-        # "cameras_type": ["OACH0060UC"],
-        'part_type': 'type1',
-        'controller_id': 'controller123'
+        "id": data_id,
+        "detection_dimension": 0,
+        "part_type": "test",
+        "part_interval": 2.9,
+        "total_image_count": 30,
+        "total_inference_count": 40,
+        "ng_type_count": 10,
+        "each_ng_type_defect_count": 5,
+        # ipc information
+        "ipc_count": 1,
+        "ipcs_config_id": ["1"],
+        # communication information
+        "communication_config_ids": [1],
+        "is_image_saving": False,
+        # ipc process result
+        "part_count": 302,
+        "total_time_used": 300.422652244568,
+        "fps": 30.1575128649901,
+        "mps": 30.1575128649901,
+        "max_part_use_time": 1.09100008010864,
+        "min_part_use_time": 0.924000024795532,
+        "avg_part_use_time": 0.957632112662529,
+        "max_image_capture_time": 1.09100008010864,
+        "min_image_capture_time": 0.924000024795532,
+        "avg_image_capture_time": 0.957632112662529,
+        "max_cortex_infer_time": 1.09100008010864,
+        "min_cortex_infer_time": 0.924000024795532,
+        "avg_cortex_infer_time": 0.957632112662529,
+
+        "ipc_performance_ids": [4],
+        "core_allocation": "prod service: 0, 1, 2, 3, 4, 5, 6, 7\nprod ui: 16, 17, 18, 19"
+                           "\ncortex: 8, 9, 10, 11, 12, 13, 14\noptix: 20, 21, 22, 23"
 
     }
     query_data = database_test.query_data(table_name="simulation_result", data_dict=test_data_dict)
@@ -482,9 +476,9 @@ if __name__ == "__main__":
 
     # new_workstation_config_id = workstation_config_add_data_test()
     # print(f"new_workstation_config_id: {new_workstation_config_id}")
-    new_workstation_config_id = 1
+    # new_workstation_config_id = 1
     # workstation_config_update_data_test(new_workstation_config_id)
-    workstation_config_query_data_test(new_workstation_config_id)
+    # workstation_config_query_data_test(new_workstation_config_id)
     # workstation_config_delete_data_test(new_workstation_config_id)
 
     # new_communication_config_id = communication_config_add_data_test()
@@ -503,9 +497,9 @@ if __name__ == "__main__":
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    # new_simulation_result_id = 1
+    new_simulation_result_id = 1
     # simulation_result_update_data_test(new_simulation_result_id)
-    # simulation_result_query_data_test(new_simulation_result_id)
+    simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
     # simulation_result_query_test()

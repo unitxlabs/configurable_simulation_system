@@ -927,20 +927,26 @@ class SimulationResult(BaseOperations, Base):
             results = query.all()  # Fetch all matching records
 
             # return [cls.__to_dict(record) for record in results]
-            # return_result = []
-            # for simulation in results:
-            #     result = {"simulation_result": (BaseOperations._records_to_dict(simulation)), "ipc_performance": []}
-            #     for perf in simulation.ipc_performance:
-            #         result["ipc_performance"].append(BaseOperations._records_to_dict(perf))
-            #     return_result.append(result)
+            return_result = []
+            for simulation in results:
+                result = {"simulation_result": (BaseOperations._records_to_dict(simulation)), "ipc_performances": []}
+                for perf in simulation.ipc_performance:
+                    result["ipc_performances"].append(
+                        {
+                            "ipc_performance": BaseOperations._records_to_dict(perf),
+                            "ipc_config": BaseOperations._records_to_dict(perf.ipc_config)
+                         }
+                    )
+                return_result.append(result)
+            return return_result
 
-            return [
-                {
-                    "simulation_result": BaseOperations._records_to_dict(simulation),
-                    "ipc_performance": [BaseOperations._records_to_dict(perf) for perf in simulation.ipc_performance]
-                }
-                for simulation in results
-            ]
+            # return [
+            #     {
+            #         "simulation_result": BaseOperations._records_to_dict(simulation),
+            #         "ipc_performance": [BaseOperations._records_to_dict(perf) for perf in simulation.ipc_performance]
+            #     }
+            #     for simulation in results
+            # ]
 
         except Exception as e:
             cls._handle_exception(session, e, data_dict)
