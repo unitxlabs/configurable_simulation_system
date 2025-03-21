@@ -7,7 +7,7 @@ import inspect
 from enum import Enum
 from sqlalchemy import (create_engine, Column, DateTime, Integer, String, Text, ARRAY, Float,
                         Boolean, ForeignKey, select, distinct)
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session, joinedload
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
 from sqlalchemy.schema import UniqueConstraint
