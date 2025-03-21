@@ -13,7 +13,7 @@ log_handler = RotatingFileHandler(
 log_handler.setLevel(logging.INFO)
 log_handler.setFormatter(logging.Formatter("%(asctime)s # %(message)s"))
 # 创建日志记录器
-logger = logging.getLogger()
+logger = logging.getLogger("backend_operate")
 logger.setLevel(logging.INFO)
 logger.addHandler(log_handler)
 
