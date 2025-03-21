@@ -7,7 +7,7 @@ import inspect
 from enum import Enum
 from sqlalchemy import (create_engine, Column, DateTime, Integer, String, Text, ARRAY, Float,
                         Boolean, ForeignKey, select, distinct)
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session, joinedload
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
 from sqlalchemy.schema import UniqueConstraint
@@ -25,8 +25,14 @@ Base = declarative_base()
 
 
 class CommunicationType(Enum):
+    # tecomX interaction handshake steps
     STATIC_SHOOTING = 0
     MOTION_SHOOTING = 1
+
+
+class CommunicationStep(Enum):
+    TWO_STEP = 2
+    FOUR_STEP = 4
 
 
 class DetectionDimension(Enum):
@@ -179,27 +185,27 @@ class IPCConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    @classmethod
-    def delete_data(cls, session: Session, data_id: int):
-        """
-        Delete a record from the table corresponding to the class.
-
-        Args:
-            session (Session): The SQLAlchemy session object.
-            data_id (int): The id of the data record to be deleted.
-        """
-        try:
-            # 查询IPCPerformance中是否有引用该IPCConfig的记录
-            ipc_performance = session.query(IPCPerformance).filter(
-                IPCPerformance.ipc_config_id == data_id).first()
-
-            if ipc_performance:
-                # 如果找到引用，不能删除并给出提示
-                logger.warning(f"IPCConfig with ID {data_id} is in use by IPCPerformance and cannot be deleted.")
-            else:
-                super().delete_data(session=session, data_id=data_id)
-        except Exception as e:
-            cls._handle_exception(session, e, data_id)
+    # @classmethod
+    # def delete_data(cls, session: Session, data_id: int):
+    #     """
+    #     Delete a record from the table corresponding to the class.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_id (int): The id of the data record to be deleted.
+    #     """
+    #     try:
+    #         # 查询IPCPerformance中是否有引用该IPCConfig的记录
+    #         ipc_performance = session.query(IPCPerformance).filter(
+    #             IPCPerformance.ipc_config_id == data_id).first()
+    #
+    #         if ipc_performance:
+    #             # 如果找到引用，不能删除并给出提示
+    #             logger.warning(f"IPCConfig with ID {data_id} is in use by IPCPerformance and cannot be deleted.")
+    #         else:
+    #             super().delete_data(session=session, data_id=data_id)
+    #     except Exception as e:
+    #         cls._handle_exception(session, e, data_id)
 
 
 class ControllerConfig(BaseOperations, Base):
@@ -209,6 +215,7 @@ class ControllerConfig(BaseOperations, Base):
     controller_version = Column(String, nullable=False)
     # 控制器连接的相机的ID，数组，因为V6最多可以连接2个相机
     cameras_id = Column(ARRAY(String), nullable=False)  # Array of String
+    cameras_type = Column(ARRAY(String), nullable=False)  # Array of String
     image_width = Column(Integer, nullable=False)
     image_height = Column(Integer, nullable=False)
     image_channel = Column(Integer, nullable=True)
@@ -221,8 +228,8 @@ class ControllerConfig(BaseOperations, Base):
     workstation_config = relationship('WorkstationConfig', back_populates='controller_config', cascade="all, delete-orphan")
 
     __table_args__ = (UniqueConstraint(
-        "controller_id", "controller_version", "cameras_id", "image_width", "image_height", "image_channel",
-        "capture_images_count", "network_inference_count", name='uq_controller_config'),)
+        "controller_id", "controller_version", "cameras_id", "cameras_type", "image_width", "image_height",
+        "image_channel", "capture_images_count", "network_inference_count", name='uq_controller_config'),)
 
     @classmethod
     def add_data(cls, session, data_dict):
@@ -238,6 +245,7 @@ class ControllerConfig(BaseOperations, Base):
                 controller_id=data_dict["controller_id"],
                 controller_version=data_dict["controller_version"],
                 cameras_id=data_dict["cameras_id"],
+                cameras_type=data_dict["cameras_type"],
                 image_width=data_dict["image_width"],
                 image_height=data_dict["image_height"],
                 image_channel=data_dict.setdefault("image_channel", 3),
@@ -376,6 +384,43 @@ class WorkstationConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
+    @classmethod
+    def query_data(cls, session: Session, data_dict: dict):
+        """
+        Query the table corresponding to the class based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List: A list of records matching the filter conditions.
+        """
+        try:
+            query = session.query(cls).join(ControllerConfig)  # Start building the query
+            for key, value in data_dict.items():
+                if hasattr(cls, key):  # Dynamically filter based on column names
+                    column = getattr(cls, key)
+                    # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
+                    if isinstance(column.type, String) and isinstance(value, str):
+                        query = query.filter(column.like(f"%{value}%"))
+                    else:
+                        query = query.filter(column == value)
+
+            results = query.all()  # Fetch all matching records
+            return_result = []
+            for workstation in results:
+                result = {
+                    "workstation_config": BaseOperations._records_to_dict(workstation),
+                    "controller_config": BaseOperations._records_to_dict(workstation.controller_config)
+                }
+                return_result.append(result)
+
+            return return_result
+
+        except Exception as e:
+            cls._handle_exception(session, e, data_dict)
+
 
 class CommunicationConfig(BaseOperations, Base):
     __tablename__ = "communication_config"
@@ -422,12 +467,13 @@ class CommunicationConfig(BaseOperations, Base):
         try:
             workstation_ids = set(session.scalars(select(WorkstationConfig.id)).all())
             if all(workstation_id in workstation_ids for workstation_id in data_dict["workstation_config_ids"]):
-                # if data_dict["communication_step"] == CommunicationType.MOTION_SHOOTING.value:
-                #     data_dict["communication_step"] = 0
+                if data_dict["communication_type"] == CommunicationType.MOTION_SHOOTING.value:
+                    data_dict["communication_step"] = CommunicationStep.TWO_STEP.value
 
-                if data_dict["communication_step"] not in CommunicationType._value2member_map_:
-                    logger.error(f"{inspect.currentframe().f_code.co_name} failed: data_dict[communication_step] "
-                                 f"{data_dict['communication_step']} value not correct.")
+                if (data_dict["communication_type"] == CommunicationType.STATIC_SHOOTING.value
+                        and data_dict["communication_step"] not in CommunicationStep._value2member_map_):
+                        logger.error(f"{inspect.currentframe().f_code.co_name} failed: data_dict[communication_step] "
+                                     f"{data_dict['communication_step']} value not correct.")
                 else:
                     new_communication_config = CommunicationConfig(
                         name=data_dict["name"],
@@ -466,7 +512,12 @@ class CommunicationConfig(BaseOperations, Base):
             # Ensure 'id' exists in the dictionary
             if "id" not in data_dict:
                 raise ValueError("The dictionary must contain an 'id' key to identify the record.")
-            if data_dict["communication_step"] not in CommunicationType._value2member_map_:
+
+            if data_dict["communication_type"] == CommunicationType.MOTION_SHOOTING.value:
+                data_dict["communication_step"] = CommunicationStep.TWO_STEP.value
+
+            if (data_dict["communication_type"] == CommunicationType.STATIC_SHOOTING.value
+                    and data_dict["communication_step"] not in CommunicationStep._value2member_map_):
                 raise ValueError(f"The dictionary communication_step {data_dict['communication_step']} not correct!.")
 
             # Retrieve the record
@@ -488,53 +539,48 @@ class CommunicationConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    # @classmethod
-    # def delete_data(cls, session, data_id):
-    #     """
-    #     Delete the CommunicationConfig table using a dictionary.
-    #
-    #     Args:
-    #         session: SQLAlchemy session object.
-    #         data_id: the id of data recode in CommunicationConfig table to be deleted.
-    #     """
-    #     try:
-    #         # Retrieve the record
-    #         communication_config_to_delete = session.get(cls, data_id)
-    #         if communication_config_to_delete:
-    #             session.delete(communication_config_to_delete)
-    #             session.commit()
-    #             logger.info(f"{cls.__name__} deleted data successfully with id {data_id} .")
-    #         else:
-    #             logger.info(f"No {cls.__name__} found with id {data_id}.")
-    #
-    #     except Exception as e:
-    #         session.rollback()
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to delete data {data_id}: {e}")
-    #
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the CommunicationConfig table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(cls)  # Start building the query
-    #         # Dynamically add filters based on the keys in filter_dict
-    #         for key, value in data_dict.items():
-    #             if hasattr(cls, key):  # Check if the attribute exists on the model
-    #                 column = getattr(cls, key)
-    #                 query = query.filter(column==value)
-    #
-    #         return query.all()  # Return all matching records as a list
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
+    @classmethod
+    def query_data(cls, session, data_dict):
+        """
+        Query the CommunicationConfig table based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
+        """
+        try:
+            query = session.query(CommunicationConfig). \
+                join(WorkstationConfig, WorkstationConfig.id.in_(CommunicationConfig.workstation_config_ids)).\
+                join(ControllerConfig, WorkstationConfig.controller_config_id == ControllerConfig.id)
+
+            # Dynamically apply filters from the dictionary
+            for key, value in data_dict.items():
+                if hasattr(CommunicationConfig, key):
+                    column = getattr(CommunicationConfig, key)
+                    query = query.filter(column == value)
+
+                elif hasattr(WorkstationConfig, key):
+                    column = getattr(WorkstationConfig, key)
+                    query = query.filter(column == value)
+
+                elif hasattr(ControllerConfig, key):
+                    column = getattr(ControllerConfig, key)
+                    query = query.filter(column == value)
+
+            # Explicitly load related entities
+            query = query.options(
+                # Eagerly load WorkstationConfig -> ControllerConfig relationship
+                joinedload(WorkstationConfig.controller_config)
+            )
+
+            # Return the results
+            return query.all()
+
+        except Exception as e:
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
 class IPCPerformance(BaseOperations, Base):

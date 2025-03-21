@@ -60,6 +60,7 @@ def controller_config_add_data_test():
         "controller_id": "312513545",
         "controller_version": "V6",
         "cameras_id": ["15324551"],
+        "cameras_type": ["OACH0060UC"],
         "image_width": 4096,
         "image_height": 3000,
         "capture_images_count": 30,
@@ -76,6 +77,7 @@ def controller_config_update_data_test(data_id=None):
         "controller_id": "312513545",
         "controller_version": "V6",
         "cameras_id": ["15324552"],
+        "cameras_type": ["OACH0060UC", "OACH0080UC"],
         "image_width": 4096,
         "image_height": 3000,
         "capture_images_count": 30,
@@ -91,6 +93,7 @@ def controller_config_query_data_test(data_id=None):
         "controller_id": "312513545",
         "controller_version": "V6",
         "cameras_id": ["15324552"],
+        "cameras_type": ["OACH0060UC"],
         "image_width": 4096,
         "image_height": 3000,
         "capture_images_count": 30,
@@ -110,7 +113,7 @@ def workstation_config_add_data_test():
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "workstation_id": 1,
-        "controller_config_id": 3,
+        "controller_config_id": 2,
         "to_next_ws_offset": 2.1,
         "camera_reset_time": 1.7,
         "sequence_count": 3,
@@ -126,7 +129,7 @@ def workstation_config_update_data_test(data_id=None):
     test_data_dict = {
         "id": data_id,
         "workstation_id": 1,
-        "controller_config_id": 3,
+        "controller_config_id": 2,
         "to_next_ws_offset": 2.2,
         "camera_reset_time": 1.7,
         "sequence_count": 4,
@@ -141,12 +144,14 @@ def workstation_config_query_data_test(data_id=None):
     test_data_dict = {
         "id": data_id,
         "workstation_id": 1,
-        "controller_config_id": 3,
+        "controller_config_id": 2,
         "to_next_ws_offset": 2.2,
         "camera_reset_time": 1.7,
         "sequence_count": 4,
         "sequences_id": [0, 1, 2, 3],
         "sequences_interval": [10, 10, 10, 10],
+
+        "cameras_type": ["OACH0060UC", "OACH0080UC"],
     }
     query_data = database_test.query_data(table_name="workstation_config", data_dict=test_data_dict)
     print(query_data)
@@ -166,9 +171,9 @@ def communication_config_add_data_test():
         "part_interval": 2.8,
         "part_start_to_ws1_interval": 1.5,
         "communication_type": 0,
-        "communication_step": 1,
+        "communication_step": 2,
         "workstation_count": 1,
-        "workstation_config_ids": [2],
+        "workstation_config_ids": [1],
         "workstations_in_use": [True, False, False, False, False, False],
     }
     new_data_id = database_test.add_data(table_name="communication_config", data_dict=test_data_dict)
@@ -219,8 +224,8 @@ def communication_config_delete_data_test(data_id=None):
 def ipc_performance_add_data_test():
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
-        "ipc_config_id": 17,
-        "simulation_result_id": 4,
+        "ipc_config_id": 1,
+        "simulation_result_id": 1,
         "model_size": "5MP",
         "network_architecture": "V4",
         "cpu_usage_avg": 20.2283806343907,
@@ -241,7 +246,7 @@ def ipc_performance_update_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         "id": data_id,
-        "ipc_config_id": 17,
+        "ipc_config_id": 1,
         "simulation_result_id": 1,
         "model_size": "5MP",
         "network_architecture": "V5",
@@ -262,7 +267,7 @@ def ipc_performance_query_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         # "id": data_id,
-        # "ipc_config_id": 17,
+        # "ipc_config_id": 1,
         # "simulation_result_id": 1,
         "model_size": "5",
         "network_architecture": "V",
@@ -301,7 +306,7 @@ def simulation_result_add_data_test():
         "ipc_count": 1,
         "ipcs_config_id": ["1"],
         # communication information
-        "communication_config_ids": [2],
+        "communication_config_ids": [1],
         "is_image_saving": False,
         # ipc process result
         "part_count": 302,
@@ -343,7 +348,7 @@ def simulation_result_update_data_test(data_id=None):
         "ipc_count": 1,
         "ipcs_config_id": ["1"],
         # communication information
-        "communication_config_ids": [2],
+        "communication_config_ids": [1],
         "is_image_saving": False,
         # ipc process result
         "part_count": 302,
@@ -360,7 +365,7 @@ def simulation_result_update_data_test(data_id=None):
         "min_cortex_infer_time": 0.924000024795532,
         "avg_cortex_infer_time": 0.957632112662529,
 
-        "ipc_performance_ids": [],
+        "ipc_performance_ids": [4],
         "core_allocation": "prod service: 0, 1, 2, 3, 4, 5, 6, 7\nprod ui: 16, 17, 18, 19"
                            "\ncortex: 8, 9, 10, 11, 12, 13, 14\noptix: 20, 21, 22, 23"
 
@@ -372,44 +377,47 @@ def simulation_result_query_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
         # part information
-        "id": data_id,
-        "detection_dimension": 0,
-        # "part_type": "test",
-        "part_interval": 2.9,
-        "total_image_count": 30,
-        "total_inference_count": 40,
-        "ng_type_count": 10,
-        "each_ng_type_defect_count": 5,
-        # # ipc information
-        "ipc_count": 1,
-        "ipcs_config_id": ["1"],
-        # communication information
-        "communication_config_ids": [2],
-        "is_image_saving": False,
-        # ipc process result
-        "part_count": 302,
-        "total_time_used": 300.422652244568,
-        "fps": 30.1575128649901,
-        # "mps": 30.1575128649901,
-        "max_part_use_time": 1.09100008010864,
-        "min_part_use_time": 0.924000024795532,
-        "avg_part_use_time": 0.957632112662529,
-        "max_image_capture_time": 1.09100008010864,
-        "min_image_capture_time": 0.924000024795532,
-        "avg_image_capture_time": 0.957632112662529,
-        "max_cortex_infer_time": 1.09100008010864,
-        "min_cortex_infer_time": 0.924000024795532,
-        "avg_cortex_infer_time": 0.957632112662529,
-
-        "ipc_performance_ids": [7],
-        "core_allocation": "prod service: 0, 1, 2, 3, 4, 5, 6, 7\nprod ui: 16, 17, 18, 19"
-                           "\ncortex: 8, 9, 10, 11, 12, 13, 14\noptix: 20, 21, 22, 23",
-
-        "model_size": "5",
-        "network_architecture": "V",
+        # "id": data_id,
+        # "detection_dimension": 0,
+        # # "part_type": "test",
+        # "part_interval": 2.9,
+        # "total_image_count": 30,
+        # "total_inference_count": 40,
+        # "ng_type_count": 10,
+        # "each_ng_type_defect_count": 5,
+        # # # ipc information
+        # "ipc_count": 1,
+        # "ipcs_config_id": ["1"],
+        # # communication information
+        # "communication_config_ids": [1],
+        # "is_image_saving": False,
+        # # ipc process result
+        # "part_count": 302,
+        # "total_time_used": 300.422652244568,
+        # "fps": 30.1575128649901,
+        # # "mps": 30.1575128649901,
+        # "max_part_use_time": 1.09100008010864,
+        # "min_part_use_time": 0.924000024795532,
+        # "avg_part_use_time": 0.957632112662529,
+        # "max_image_capture_time": 1.09100008010864,
+        # "min_image_capture_time": 0.924000024795532,
+        # "avg_image_capture_time": 0.957632112662529,
+        # "max_cortex_infer_time": 1.09100008010864,
+        # "min_cortex_infer_time": 0.924000024795532,
+        # "avg_cortex_infer_time": 0.957632112662529,
+        #
+        # "ipc_performance_ids": [4],
+        # "core_allocation": "prod service: 0, 1, 2, 3, 4, 5, 6, 7\nprod ui: 16, 17, 18, 19"
+        #                    "\ncortex: 8, 9, 10, 11, 12, 13, 14\noptix: 20, 21, 22, 23",
+        #
+        # "model_size": "5",
+        # "network_architecture": "V",
+        # "cameras_type": ["OACH0060UC"],
+        'part_type': 'type1',
+        'controller_id': 'controller123'
 
     }
-    query_data = database_test.query_data(table_name="simulation_result", data_dict={})
+    query_data = database_test.query_data(table_name="simulation_result", data_dict=test_data_dict)
 
     print(query_data)
 
@@ -467,23 +475,23 @@ if __name__ == "__main__":
 
     # new_controller_config_id = controller_config_add_data_test()
     # print(f"new_controller_config_id: {new_controller_config_id}")
-    # new_controller_config_id = 1
+    # new_controller_config_id = 2
     # controller_config_update_data_test(new_controller_config_id)
     # controller_config_query_data_test(new_controller_config_id)
     # controller_config_delete_data_test(new_controller_config_id)
 
     # new_workstation_config_id = workstation_config_add_data_test()
     # print(f"new_workstation_config_id: {new_workstation_config_id}")
-    # new_workstation_config_id = 1
+    new_workstation_config_id = 1
     # workstation_config_update_data_test(new_workstation_config_id)
-    # workstation_config_query_data_test(new_workstation_config_id)
+    workstation_config_query_data_test(new_workstation_config_id)
     # workstation_config_delete_data_test(new_workstation_config_id)
 
     # new_communication_config_id = communication_config_add_data_test()
     # print(f"new_communication_config_id: {new_communication_config_id}")
-    new_communication_config_id = 1
-    communication_config_update_data_test(new_communication_config_id)
-    communication_config_query_data_test(new_communication_config_id)
+    # new_communication_config_id = 1
+    # communication_config_update_data_test(new_communication_config_id)
+    # communication_config_query_data_test(new_communication_config_id)
     # communication_config_delete_data_test(new_communication_config_id)
 
     # new_ipc_performance_id = ipc_performance_add_data_test()
@@ -495,7 +503,7 @@ if __name__ == "__main__":
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    # new_simulation_result_id = 4
+    # new_simulation_result_id = 1
     # simulation_result_update_data_test(new_simulation_result_id)
     # simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
