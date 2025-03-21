@@ -539,48 +539,48 @@ class CommunicationConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    @classmethod
-    def query_data(cls, session, data_dict):
-        """
-        Query the CommunicationConfig table based on a dictionary of filters.
-
-        Args:
-            session (Session): The SQLAlchemy session object.
-            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-
-        Returns:
-            List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
-        """
-        try:
-            query = session.query(CommunicationConfig). \
-                join(WorkstationConfig, WorkstationConfig.id.in_(CommunicationConfig.workstation_config_ids)).\
-                join(ControllerConfig, WorkstationConfig.controller_config_id == ControllerConfig.id)
-
-            # Dynamically apply filters from the dictionary
-            for key, value in data_dict.items():
-                if hasattr(CommunicationConfig, key):
-                    column = getattr(CommunicationConfig, key)
-                    query = query.filter(column == value)
-
-                elif hasattr(WorkstationConfig, key):
-                    column = getattr(WorkstationConfig, key)
-                    query = query.filter(column == value)
-
-                elif hasattr(ControllerConfig, key):
-                    column = getattr(ControllerConfig, key)
-                    query = query.filter(column == value)
-
-            # Explicitly load related entities
-            query = query.options(
-                # Eagerly load WorkstationConfig -> ControllerConfig relationship
-                joinedload(WorkstationConfig.controller_config)
-            )
-
-            # Return the results
-            return query.all()
-
-        except Exception as e:
-            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
+    # @classmethod
+    # def query_data(cls, session, data_dict):
+    #     """
+    #     Query the CommunicationConfig table based on a dictionary of filters.
+    #
+    #     Args:
+    #         session (Session): The SQLAlchemy session object.
+    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+    #
+    #     Returns:
+    #         List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
+    #     """
+    #     try:
+    #         query = session.query(CommunicationConfig). \
+    #             join(WorkstationConfig, WorkstationConfig.id.in_(CommunicationConfig.workstation_config_ids)).\
+    #             join(ControllerConfig, WorkstationConfig.controller_config_id == ControllerConfig.id)
+    #
+    #         # Dynamically apply filters from the dictionary
+    #         for key, value in data_dict.items():
+    #             if hasattr(CommunicationConfig, key):
+    #                 column = getattr(CommunicationConfig, key)
+    #                 query = query.filter(column == value)
+    #
+    #             elif hasattr(WorkstationConfig, key):
+    #                 column = getattr(WorkstationConfig, key)
+    #                 query = query.filter(column == value)
+    #
+    #             elif hasattr(ControllerConfig, key):
+    #                 column = getattr(ControllerConfig, key)
+    #                 query = query.filter(column == value)
+    #
+    #         # Explicitly load related entities
+    #         query = query.options(
+    #             # Eagerly load WorkstationConfig -> ControllerConfig relationship
+    #             joinedload(WorkstationConfig.controller_config)
+    #         )
+    #
+    #         # Return the results
+    #         return query.all()
+    #
+    #     except Exception as e:
+    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
 class IPCPerformance(BaseOperations, Base):

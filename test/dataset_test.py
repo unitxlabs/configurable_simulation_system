@@ -200,16 +200,16 @@ def communication_config_update_data_test(data_id=None):
 def communication_config_query_data_test(data_id=None):
     database_test = ConfigurableSimulationSystemDB()
     test_data_dict = {
-        "id": data_id,
-        "name": "test",
-        "part_type": "test",
-        "part_interval": 2.9,
-        "part_start_to_ws1_interval": 1.5,
+        # "id": data_id,
+        # "name": "test",
+        # "part_type": "test",
+        # "part_interval": 2.9,
+        # "part_start_to_ws1_interval": 1.5,
         "communication_type": 0,
-        "communication_step": 1,
-        "workstation_count": 1,
-        "workstation_config_ids": [1],
-        "workstations_in_use": [True, False, False, False, False, False],
+        # "communication_step": 1,
+        # "workstation_count": 1,
+        # "workstation_config_ids": [1],
+        # "workstations_in_use": [True, False, False, False, False, False],
     }
     query_data = database_test.query_data(table_name="communication_config", data_dict=test_data_dict)
     print(query_data)
@@ -483,9 +483,9 @@ if __name__ == "__main__":
 
     # new_communication_config_id = communication_config_add_data_test()
     # print(f"new_communication_config_id: {new_communication_config_id}")
-    # new_communication_config_id = 1
+    new_communication_config_id = 1
     # communication_config_update_data_test(new_communication_config_id)
-    # communication_config_query_data_test(new_communication_config_id)
+    communication_config_query_data_test(new_communication_config_id)
     # communication_config_delete_data_test(new_communication_config_id)
 
     # new_ipc_performance_id = ipc_performance_add_data_test()
@@ -497,9 +497,9 @@ if __name__ == "__main__":
 
     # new_simulation_result_id = simulation_result_add_data_test()
     # print(f"new_simulation_result_id: {new_simulation_result_id}")
-    new_simulation_result_id = 1
+    # new_simulation_result_id = 1
     # simulation_result_update_data_test(new_simulation_result_id)
-    simulation_result_query_data_test(new_simulation_result_id)
+    # simulation_result_query_data_test(new_simulation_result_id)
     # simulation_result_delete_data_test(new_simulation_result_id)
 
     # simulation_result_query_test()
