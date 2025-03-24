@@ -7,7 +7,7 @@ import inspect
 from enum import Enum
 from sqlalchemy import (create_engine, Column, DateTime, Integer, String, Text, ARRAY, Float,
                         Boolean, ForeignKey, select, distinct)
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session, joinedload
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship, Session
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
 from sqlalchemy.schema import UniqueConstraint
@@ -293,6 +293,40 @@ class ControllerConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
+    @classmethod
+    def query_data(cls, session: Session, data_dict: dict):
+        """
+        Query the table corresponding to the class based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List: A list of records matching the filter conditions.
+        """
+        try:
+            query = session.query(cls)  # Start building the query
+            for key, value in data_dict.items():
+                if hasattr(cls, key):  # Dynamically filter based on column names
+                    column = getattr(cls, key)
+                    # 特殊处理 cameras_type 数组
+                    if key == "cameras_type" and isinstance(value, list):
+                        # 使用 PostgreSQL 的 && 操作符检查数组是否有交集
+                        query = query.filter(column.op('&&')(value))
+                    # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
+                    elif isinstance(column.type, String) and isinstance(value, str):
+                        query = query.filter(column.like(f"%{value}%"))
+                    else:
+                        query = query.filter(column == value)
+
+            results = query.all()  # Fetch all matching records
+
+            return [cls._records_to_dict(record) for record in results]
+
+        except Exception as e:
+            cls._handle_exception(session, e, data_dict)
+
 
 class WorkstationConfig(BaseOperations, Base):
     __tablename__ = "workstation_config"
@@ -401,8 +435,12 @@ class WorkstationConfig(BaseOperations, Base):
             for key, value in data_dict.items():
                 if hasattr(cls, key):  # Dynamically filter based on column names
                     column = getattr(cls, key)
+                    # 特殊处理 cameras_type 数组
+                    if key == "cameras_type" and isinstance(value, list):
+                        # 使用 PostgreSQL 的 && 操作符检查数组是否有交集
+                        query = query.filter(column.op('&&')(value))
                     # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
-                    if isinstance(column.type, String) and isinstance(value, str):
+                    elif isinstance(column.type, String) and isinstance(value, str):
                         query = query.filter(column.like(f"%{value}%"))
                     else:
                         query = query.filter(column == value)
@@ -539,48 +577,65 @@ class CommunicationConfig(BaseOperations, Base):
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
 
-    # @classmethod
-    # def query_data(cls, session, data_dict):
-    #     """
-    #     Query the CommunicationConfig table based on a dictionary of filters.
-    #
-    #     Args:
-    #         session (Session): The SQLAlchemy session object.
-    #         data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
-    #
-    #     Returns:
-    #         List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
-    #     """
-    #     try:
-    #         query = session.query(CommunicationConfig). \
-    #             join(WorkstationConfig, WorkstationConfig.id.in_(CommunicationConfig.workstation_config_ids)).\
-    #             join(ControllerConfig, WorkstationConfig.controller_config_id == ControllerConfig.id)
-    #
-    #         # Dynamically apply filters from the dictionary
-    #         for key, value in data_dict.items():
-    #             if hasattr(CommunicationConfig, key):
-    #                 column = getattr(CommunicationConfig, key)
-    #                 query = query.filter(column == value)
-    #
-    #             elif hasattr(WorkstationConfig, key):
-    #                 column = getattr(WorkstationConfig, key)
-    #                 query = query.filter(column == value)
-    #
-    #             elif hasattr(ControllerConfig, key):
-    #                 column = getattr(ControllerConfig, key)
-    #                 query = query.filter(column == value)
-    #
-    #         # Explicitly load related entities
-    #         query = query.options(
-    #             # Eagerly load WorkstationConfig -> ControllerConfig relationship
-    #             joinedload(WorkstationConfig.controller_config)
-    #         )
-    #
-    #         # Return the results
-    #         return query.all()
-    #
-    #     except Exception as e:
-    #         logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
+    @classmethod
+    def query_data(cls, session, data_dict):
+        """
+        Query the CommunicationConfig table based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List[CommunicationConfig]: A list of CommunicationConfig objects matching the filter conditions.
+        """
+        try:
+            # Step 1: Separate filters for CommunicationConfig and WorkstationConfig
+            filter_communication = {}
+            filter_workstation = {}
+
+            for key, value in data_dict.items():
+                if hasattr(CommunicationConfig, key):
+                    filter_communication[key] = value
+                elif hasattr(WorkstationConfig, key) or hasattr(ControllerConfig, key):
+                    filter_workstation[key] = value
+
+            # Step 2: Query CommunicationConfig based on filter_communication
+            query = session.query(CommunicationConfig)
+            for key, value in filter_communication.items():
+                column = getattr(CommunicationConfig, key)
+                query = query.filter(column == value)
+
+            queried_communication_configs = query.all()
+
+            # Step 3: Query WorkstationConfig based on filter_workstation
+            query = session.query(WorkstationConfig).join(ControllerConfig)
+            for key, value in filter_workstation.items():
+                if hasattr(WorkstationConfig, key):
+                    column = getattr(WorkstationConfig, key)
+                else:
+                    column = getattr(ControllerConfig, key)
+                query = query.filter(column == value)
+
+            queried_workstation_configs = WorkstationConfig.query_data(session, filter_workstation)
+            queried_workstation_config_ids = {ws["workstation_config"]["id"] for ws in queried_workstation_configs}
+
+            # Step 4: Filter CommunicationConfig based on WorkstationConfig
+            filtered_communication_configs = []
+            for comm_config in queried_communication_configs:
+                if set(comm_config.workstation_config_ids).issubset(queried_workstation_config_ids):
+                    result = {"communication_config": (BaseOperations._records_to_dict(comm_config)),
+                              "workstation_configs": []}
+                    for workstation_config_id in comm_config.workstation_config_ids:
+                        result["workstation_configs"].extend(
+                            WorkstationConfig.query_data(session, {"id": workstation_config_id})
+                        )
+                    filtered_communication_configs.append(result)
+
+            return filtered_communication_configs
+
+        except Exception as e:
+            logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to query: {e}")
 
 
 class IPCPerformance(BaseOperations, Base):
@@ -695,6 +750,43 @@ class IPCPerformance(BaseOperations, Base):
         except Exception as e:
             session.rollback()
             logger.error(f"{cls.__name__} {inspect.currentframe().f_code.co_name} Failed to update: {e}")
+
+    @classmethod
+    def query_data(cls, session: Session, data_dict: dict):
+        """
+        Query the table corresponding to the class based on a dictionary of filters.
+
+        Args:
+            session (Session): The SQLAlchemy session object.
+            data_dict (dict): Dictionary of filter conditions, where keys are column names and values are the desired values.
+
+        Returns:
+            List: A list of records matching the filter conditions.
+        """
+        try:
+            query = session.query(cls).join(IPCConfig)  # Start building the query
+            for key, value in data_dict.items():
+                if hasattr(cls, key):  # Dynamically filter based on column names
+                    column = getattr(cls, key)
+                    # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
+                    if isinstance(column.type, String) and isinstance(value, str):
+                        query = query.filter(column.like(f"%{value}%"))
+                    else:
+                        query = query.filter(column == value)
+
+            results = query.all()  # Fetch all matching records
+
+            return_result = []
+            for performance in results:
+                result = {
+                    "ipc_performance": (BaseOperations._records_to_dict(performance)),
+                    "ipc_config": BaseOperations._records_to_dict(performance.ipc_config)
+                }
+                return_result.append(result)
+            return return_result
+
+        except Exception as e:
+            cls._handle_exception(session, e, data_dict)
 
     @classmethod
     def delete_data(cls, session: Session, data_id: int):
@@ -914,8 +1006,19 @@ class SimulationResult(BaseOperations, Base):
             List: A list of records matching the filter conditions.
         """
         try:
-            query = session.query(cls).join(IPCPerformance).join(IPCConfig)  # Start building the query
+            # Step 1: Separate filters for SimulationResult and CommunicationConfig
+            filter_simulation = {}
+            filter_communication = {}
+
             for key, value in data_dict.items():
+                if hasattr(SimulationResult, key) or hasattr(IPCPerformance, key) or hasattr(IPCConfig, key):
+                    filter_simulation[key] = value
+                elif hasattr(WorkstationConfig, key) or hasattr(ControllerConfig, key) or hasattr(CommunicationConfig, key):
+                    filter_communication[key] = value
+
+            # Step 2: Query SimulationResult based on filter_simulation
+            query = session.query(cls).join(IPCPerformance).join(IPCConfig)  # Start building the query
+            for key, value in filter_simulation.items():
                 if hasattr(cls, key):  # Dynamically filter based on column names
                     column = getattr(cls, key)
                     # 如果列是字符串类型，则使用 LIKE 进行模糊匹配
@@ -924,29 +1027,32 @@ class SimulationResult(BaseOperations, Base):
                     else:
                         query = query.filter(column == value)
 
-            results = query.all()  # Fetch all matching records
+            queried_simulation_results = query.all() # Fetch all matching records
 
-            # return [cls.__to_dict(record) for record in results]
-            return_result = []
-            for simulation in results:
-                result = {"simulation_result": (BaseOperations._records_to_dict(simulation)), "ipc_performances": []}
-                for perf in simulation.ipc_performance:
-                    result["ipc_performances"].append(
-                        {
-                            "ipc_performance": BaseOperations._records_to_dict(perf),
-                            "ipc_config": BaseOperations._records_to_dict(perf.ipc_config)
-                         }
-                    )
-                return_result.append(result)
-            return return_result
+            # Step 3: Query CommunicationConfig based on filter_communication
+            queried_communication_configs = CommunicationConfig.query_data(session, filter_communication)
+            queried_communication_config_ids = {ws["communication_config"]["id"] for ws in queried_communication_configs}
 
-            # return [
-            #     {
-            #         "simulation_result": BaseOperations._records_to_dict(simulation),
-            #         "ipc_performance": [BaseOperations._records_to_dict(perf) for perf in simulation.ipc_performance]
-            #     }
-            #     for simulation in results
-            # ]
+            # Step 4: Filter SimulationResult based on                 elif hasattr(WorkstationConfig, key) or hasattr(ControllerConfig, key) or hasattr(CommunicationConfig, key):
+            filtered_simulation_results = []
+            for simulation_result in queried_simulation_results:
+                if set(simulation_result.communication_config_ids).issubset(queried_communication_config_ids):
+                    result = {
+                        "simulation_result": (BaseOperations._records_to_dict(simulation_result)),
+                        "ipc_performances": [],
+                        "communication_configs": [],
+                    }
+                    for perf in simulation_result.ipc_performance:
+                        result["ipc_performances"].append(
+                            {
+                                "ipc_performance": BaseOperations._records_to_dict(perf),
+                                "ipc_config": BaseOperations._records_to_dict(perf.ipc_config)
+                             }
+                        )
+                    for com_id in simulation_result.communication_config_ids:
+                        result["communication_configs"].extend(CommunicationConfig.query_data(session, {"id": com_id}))
+                    filtered_simulation_results.append(result)
+            return filtered_simulation_results
 
         except Exception as e:
             cls._handle_exception(session, e, data_dict)
