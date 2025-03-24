@@ -135,3 +135,41 @@ def get_system_info():
 def get_system_log():
     logs = Logger.get_last_logs(20)
     return CommonResponse(msg="", data=logs)
+
+
+import psutil
+import time
+import random
+from datetime import datetime
+
+
+# 模拟实时获取数据
+def get_system_data():
+    # 获取 CPU 使用率
+    cpu_data = [psutil.cpu_percent(interval=1)]  # 实时获取 CPU 使用率
+
+    # 获取磁盘使用情况
+    disk_data = [psutil.disk_usage("/").percent]  # 获取磁盘使用率，假设是根目录
+
+    # 获取内存使用情况
+    memory = psutil.virtual_memory()
+    memory_data = [
+        {"name": "已用", "value": memory.percent},  # 内存已用百分比
+        {"name": "空闲", "value": 100 - memory.percent},  # 内存空闲百分比
+    ]
+
+    # 获取当前时间
+    time_data = [datetime.now().strftime("%Y-%m-%d %H:%M:%S")]  # 当前时间
+
+    return {
+        "cpuData": cpu_data,
+        "diskData": disk_data,
+        "memoryData": memory_data,
+        "timeData": time_data,
+    }
+
+
+@systemInfoRouter.get("/runInfo", response_model=CommonResponse)
+def get_system_run_info():
+    data = get_system_data()
+    return CommonResponse(msg="", data=data)
