@@ -71,11 +71,13 @@ def get_controller_list():
         # 获取 max_width 和 max_height
         max_width = camera_info.get("max_width", 0)
         max_height = camera_info.get("max_height", 0)
+        channel = camera_info.get("channel", 3)
+        model = camera_info.get("model", "")
         has_version = False
         # 遍历所有控制器类型
         for controller_type, data in camera_info.items():
             # 跳过 max_width 和 max_height，处理版本信息
-            if controller_type in ["max_width", "max_height"]:
+            if controller_type in ["max_width", "max_height", "channel", "model"]:
                 continue
 
             # 如果 controller_type 是控制器ID（例如 "/dev/ttyS3"），并且 data 是版本列表
@@ -101,8 +103,8 @@ def get_controller_list():
                             cameras_id=[camera_id],
                             image_width=max_width,
                             image_height=max_height,
-                            image_channel=3,
-                            cameras_type="1",
+                            image_channel=channel,
+                            cameras_type=[model],
                             capture_images_count=capture_images_count,
                             network_inference_count=networks_inference_count,
                             isActive=True,
@@ -117,8 +119,8 @@ def get_controller_list():
                     cameras_id=[camera_id],
                     image_width=max_width,
                     image_height=max_height,
-                    image_channel=3,
-                    cameras_type="1",
+                    image_channel=channel,
+                    cameras_type=[model],
                     capture_images_count=0,
                     network_inference_count=0,
                     isActive=True,
@@ -152,7 +154,14 @@ async def save(data: List[ControllerSettingsData] = []):
     if data_dicts:
         # 遍历 data，逐个插入数据库
         for data_dict in data_dicts:
-            db_instance.add_data(table_name="controller_config", data_dict=data_dict)
+            new_data_id = db_instance.add_data(
+                table_name="controller_config", data_dict=data_dict
+            )
+            if new_data_id is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="创建失败.",
+                )
     Logger.log_action(f"创建控制器配置:{data_dicts}")
     return CommonResponse(msg="创建成功", data={})
 

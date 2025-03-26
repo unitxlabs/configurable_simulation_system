@@ -44,7 +44,7 @@ class Logger:
 
         # 格式化日志数据
         formatted_logs = []
-        for line in log_lines:
+        for line in reversed(log_lines):
             # 提取时间和日志消息
             timestamp = line.split("#")[0]
             message = line.split("#")[1]

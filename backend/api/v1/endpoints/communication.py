@@ -30,7 +30,11 @@ def get_communication_data(
     data = db_instance.query_data(
         table_name="communication_config", data_dict=data_dict
     )
-    return CommonResponse(msg="获取成功", data=data)
+    result = []
+    for comm_config in data:
+        print(comm_config.get("communication_config"))
+        result.append(comm_config.get("communication_config"))
+    return CommonResponse(msg="获取成功", data=result)
 
 
 @communicationRouter.post("/save", response_model=CommonResponse)
@@ -79,13 +83,18 @@ async def apply(data: CommunicationUpdateSettingsData):
         data.id = id
     global global_communication_data
     global_communication_data = data.dict()
-    # Logger.log_action(f"应用通讯:{data.dict()}")
+    Logger.log_action(f"应用通讯:{data.dict()}")
     return CommonResponse(msg="应用通成功", data={})
 
 
 @communicationRouter.get("/applied_data", response_model=CommonResponse)
 async def get_applied_data():
     data = {}
+    data_dict = {}
     if global_communication_data:
-        data = global_communication_data
+        gdata = global_communication_data
+        data_dict["id"] = gdata.get("id")
+        data = db_instance.query_data(
+            table_name="communication_config", data_dict=data_dict
+        )
     return CommonResponse(msg="获取成功", data=data)

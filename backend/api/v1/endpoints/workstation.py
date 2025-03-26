@@ -31,8 +31,14 @@ def get_workstation_data(
 
 @workstationRouter.post("/save", response_model=CommonResponse)
 async def save(data: WorkstationSaveSettingsData):
-    print(f"创建工位:{data}")
-    db_instance.add_data(table_name="workstation_config", data_dict=data.dict())
+    new_data_id = db_instance.add_data(
+        table_name="workstation_config", data_dict=data.dict()
+    )
+    if new_data_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="创建失败.",
+        )
     Logger.log_action(f"创建工位:{data}")
     return CommonResponse(msg="创建成功", data={})
 
