@@ -54,7 +54,9 @@ def get_controller_pic_count(controller_id: str):
 
 @controllerRouter.get("/list", response_model=CommonResponse)
 def get_controller_list():
-    url = "http://localhost:10001/perception/api/v1/hardware/all_cameras_controllers_mapping"
+    url = (
+        "http://localhost:10001/perception/api/v1/hardware/all_cameras_controllers_info"
+    )
 
     try:
         response = requests.get(url)
