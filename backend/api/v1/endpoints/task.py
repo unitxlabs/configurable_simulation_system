@@ -64,6 +64,23 @@ def background_task(c: any):
                     table_name="simulation_result", data_dict=test_data_dict
                 )
                 print(f"Task completed, result inserted with ID: {new_data_id}")
+                test_ipc_config_data_dict = {
+                    "ipc_config_id": 1,
+                    "simulation_result_id": new_data_id,
+                    "model_size": "5MP",
+                    "network_architecture": "V4",
+                    "cpu_usage_avg": 20.2283806343907,
+                    "gpus_usage_avg": [25.7846410684474],
+                    "gpus_memory_usage_avg": [19.4115372089236],
+                    "memory_usage_avg": 12.4136894824707,
+                    "disk_usage_avg": 28.0843071786311,
+                    "disk_read_speed_avg": 0.000312082075415486,
+                    "disk_write_speed_avg": 145.954015496326,
+                    "workstations_in_use": [True, False, False, False, False, False],
+                }
+                db_instance.add_data(
+                    table_name="ipc_performance", data_dict=test_ipc_config_data_dict
+                )
                 break  # Exit the loop after 30 seconds and task completion
             else:
                 print("Task is running...")
