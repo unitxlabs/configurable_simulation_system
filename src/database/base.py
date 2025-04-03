@@ -887,7 +887,7 @@ class SimulationResult(BaseOperations, Base):
             # self.session.query(SimulationResult).delete()
             # self.session.commit()
 
-            communication_config_ids = set(session.scalars(select(WorkstationConfig.id)).all())
+            communication_config_ids = set(session.scalars(select(CommunicationConfig.id)).all())
             if all(item in communication_config_ids for item in data_dict["communication_config_ids"]):
                 if data_dict.setdefault("detection_dimension", 0) == DetectionDimension.TWO_D.value:
                     data_dict.setdefault("max_25d_mean_time", 0),
