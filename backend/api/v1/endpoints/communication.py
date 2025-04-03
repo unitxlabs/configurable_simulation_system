@@ -16,13 +16,12 @@ global_communication_data = {}
 
 @communicationRouter.get("/data", response_model=CommonResponse)
 def get_communication_data(
-    communication_type: int = Query(1, description=""),
+    communication_type: int = Query(0, description=""),
     part_type: Optional[str] = Query(None, description=""),
     part_interval: Optional[int] = Query(None, description=""),
 ):
     data_dict = {}
-    if communication_type:
-        data_dict["communication_type"] = communication_type
+    data_dict["communication_type"] = communication_type
     if part_type:
         data_dict["part_type"] = part_type
     if part_interval:
@@ -32,7 +31,6 @@ def get_communication_data(
     )
     result = []
     for comm_config in data:
-        print(comm_config.get("communication_config"))
         result.append(comm_config.get("communication_config"))
     return CommonResponse(msg="获取成功", data=result)
 

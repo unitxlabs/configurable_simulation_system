@@ -64,8 +64,9 @@ def background_task(c: any):
                     table_name="simulation_result", data_dict=test_data_dict
                 )
                 print(f"Task completed, result inserted with ID: {new_data_id}")
+                task_result_id = new_data_id
                 test_ipc_config_data_dict = {
-                    "ipc_config_id": 1,
+                    "ipc_config_id": 4,
                     "simulation_result_id": new_data_id,
                     "model_size": "5MP",
                     "network_architecture": "V4",
