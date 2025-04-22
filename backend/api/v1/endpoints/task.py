@@ -1,9 +1,12 @@
-from fastapi import APIRouter
-from threading import Thread, Event, Lock
+from fastapi import APIRouter, HTTPException
+from threading import Thread, Event
 import backend.api.v1.endpoints.communication as c
 import time
 from backend.database import db_instance
-
+from backend.communication.fixed_communication import FixedCommunication
+from backend.communication.base_communication import BaseCommunication
+from backend.communication.flying_communication import FlyingCommunication
+import asyncio
 runRouter = APIRouter()
 # Task management
 task_thread = None
@@ -12,11 +15,11 @@ task_status_code = 0  # 0: Not started, 1: Running, 2: Paused, 3: Stopped
 task_result_id = 0
 pause_event = Event()
 stop_event = Event()
-lock = Lock()  # Ensure thread safety
+lock = asyncio.Lock()  # 使用asyncio.Lock替代threading.Lock
 
 
-def background_task(c: any):
-    communication_config = c.get("communication_config")
+def background_task(c: BaseCommunication):
+    communication_config = c.config.get("communication_config")
     print(communication_config)
     global task_running, task_status_code, task_result_id
     start_time = time.time()
@@ -85,36 +88,84 @@ def background_task(c: any):
                 break  # Exit the loop after 30 seconds and task completion
             else:
                 print("Task is running...")
+                result=c.get_result()
+                print(result)
                 time.sleep(1)  # Simulate task running
         else:
             task_status_code = 2  # Task is paused
             print("Task is paused...")
             time.sleep(1)
-
+    c.stop()
     task_running = False
     task_status_code = 3  # Task stopped
     print("Task stopped")
 
 
 @runRouter.get("/run")
-def run_task():
+async def run_task():
     global task_thread, task_running, task_status_code
-    with lock:
+
+    async with lock:
         if task_running:
             return {
                 "message": "Task is already running",
                 "status_code": task_status_code,
             }
 
-        stop_event.clear()
-        pause_event.clear()  # Default to running state
-        task_thread = Thread(
-            target=background_task, args=(c.global_communication_data,), daemon=True
-        )
-        task_thread.start()
-        task_running = True
-        task_status_code = 1  # Task is running
-    return {"message": "Task started", "status_code": task_status_code}
+        # plc_client = PLCConfigClient()
+
+        # try:
+        #     # ✅ 连接PLC
+        #     connected = await plc_client.connect()
+        #     if not connected:
+        #         return {
+        #             "message": "无法连接到PLC",
+        #             "status_code": task_status_code,
+        #         }
+
+        #     # ✅ 写入配置
+        #     config_sent = await plc_client.write_config(c.global_communication_data)
+        #     if not config_sent:
+        #         await plc_client.disconnect()
+        #         return {
+        #             "message": "PLC配置发送失败",
+        #             "status_code": task_status_code,
+        #         }
+
+        #     await plc_client.disconnect()
+
+        # except Exception as e:
+        #     return {
+        #         "message": f"PLC操作失败: {str(e)}",
+        #         "status_code": task_status_code,
+        #     }
+
+        # 创建通信实例
+        if c.global_communication_data.get("communication_config", {}).get("communication_type") == 0:
+            communication = FixedCommunication(c.global_communication_data)
+        else:
+            communication = FlyingCommunication(c.global_communication_data)
+
+        # 启动通信
+        if not await communication.start():
+            raise HTTPException(status_code=503, detail="通信启动失败")
+
+
+        # ✅ 启动任务线程
+        # stop_event.clear()
+        # pause_event.clear()
+
+        # task_thread = Thread(
+        #     target=background_task,
+        #     args=(communication,),
+        #     daemon=True
+        # )
+        # task_thread.start()
+
+        # task_running = True
+        # task_status_code = 1  # 表示任务已启动
+
+        return {"message": "Task started", "status_code": task_status_code}
 
 
 @runRouter.get("/pause")
@@ -169,59 +220,3 @@ def get_task_result():
             data = dbData[0]
     return {"data": data}
 
-
-def transform_data(data):
-    # 获取workstation_config_ids和workstations_in_use
-    c_name = data["communication_config"]["name"]
-    workstations_in_use = data["communication_config"]["workstations_in_use"]
-    workstation_configs = data["workstation_configs"]
-
-    # 生成转换后的数据
-    result = []
-    address = 7526  # 初始化地址
-    for i, ws_config in enumerate(workstation_configs):
-        if workstations_in_use[i]:
-            workstation_id = ws_config["workstation_config"]["workstation_id"]
-            controller_config = ws_config["controller_config"]
-
-            # 生成name字段
-            name = f"{c_name}_{workstation_id}"
-
-            # 生成camera字段
-            camera = []
-            for camera_id in controller_config["cameras_id"]:
-                controller_port_id = controller_config["controller_id"]
-                camera.append(
-                    {"camera_id": camera_id, "controller_port_id": controller_port_id}
-                )
-            current_address = address
-            address += 2  # signal的address使用current_address，然后address加2
-            part_id_address = address
-            address += 2  # part_id的address
-
-            # 生成station_done字段
-            station_done = {
-                "signal": {
-                    "request": {
-                        "address": str(current_address),  # 使用当前的地址
-                        "length": "1",
-                        "default_signal": [0, 1, 2],
-                    }
-                },
-                "part_id": {
-                    "request": {"address": str(part_id_address), "length": "1"}
-                },
-            }
-
-            result.append(
-                {"name": name, "camera": camera, "station_done": station_done}
-            )
-
-    return result
-
-
-@runRouter.get("/info")
-def run_task_info():
-    print(c.global_communication_data)
-    data = transform_data(c.global_communication_data)
-    return {"message": "Task started", "data": data}

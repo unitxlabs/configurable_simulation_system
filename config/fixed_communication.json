@@ -1,0 +1,166 @@
+{
+    "plcs": [
+        {
+            "ip": "127.0.0.1",
+            "port": "5020",
+            "protocol": "Modbus TCP",
+            "name": "the_name_of_plc",
+            "addresses": {
+                "part_start": {
+                    "signal": {
+                        "request": {
+                            "address": "7500",
+                            "length": "1",
+                            "default_signal": [
+                                0,
+                                1,
+                                2
+                            ]
+                        }
+                    },
+                    "part_id": {
+                        "request": {
+                            "address": "7502",
+                            "length": "1"
+                        }
+                    },
+                    "part_type": {
+                        "request": {
+                            "address": "7504",
+                            "length": "1"
+                        }
+                    }
+                },
+                "part_end": {
+                    "signal": {
+                        "request": {
+                            "address": "7506",
+                            "length": "1",
+                            "default_signal": [
+                                0,
+                                1,
+                                2
+                            ]
+                        }
+                    },
+                    "part_id": {
+                        "request": {
+                            "address": "7508",
+                            "length": "1"
+                        }
+                    },
+                    "part_type": {
+                        "request": {
+                            "address": "7510",
+                            "length": "1"
+                        }
+                    }
+                },
+                "part_result": {
+                    "signal": {
+                        "request": {
+                            "address": "7512",
+                            "length": "1",
+                            "default_signal": [
+                                0,
+                                1,
+                                2
+                            ]
+                        }
+                    },
+                    "part_id": {
+                        "request": {
+                            "address": "7514",
+                            "length": "1"
+                        }
+                    },
+                    "result": {
+                        "request": {
+                            "address": "7516",
+                            "length": "1"
+                        }
+                    }
+                },
+                "sys_reset": {
+                    "signal": {
+                        "request": {
+                            "address": "7518",
+                            "length": "1",
+                            "default_signal": [
+                                0,
+                                1,
+                                2
+                            ]
+                        }
+                    }
+                },
+                "sys_heartbeat": {
+                    "signal": {
+                        "request": {
+                            "address": "7520",
+                            "length": "1",
+                            "default_signal": [
+                                0,
+                                1,
+                                2
+                            ]
+                        }
+                    }
+                },
+                "sys_alarm": {
+                    "signal": {
+                        "request": {
+                            "address": "7522",
+                            "length": "1",
+                            "default_signal": [
+                                0,
+                                1,
+                                2
+                            ]
+                        }
+                    },
+                    "alarm_type": {
+                        "request": {
+                            "address": "7524",
+                            "length": "1"
+                        }
+                    }
+                },
+                "station": [
+                    {
+                        "name": "飞拍配置1_6",
+                        "camera": [
+                            {
+                                "camera_id": "DA0168512",
+                                "controller_port_id": "3232238091"
+                            },
+                            {
+                                "camera_id": "11111111",
+                                "controller_port_id": "3232238091"
+                            }
+                        ],
+                        "station_done": {
+                            "signal": {
+                                "request": {
+                                    "address": "7526",
+                                    "length": "1",
+                                    "default_signal": [
+                                        0,
+                                        1,
+                                        2
+                                    ]
+                                }
+                            },
+                            "part_id": {
+                                "request": {
+                                    "address": "7528",
+                                    "length": "1"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

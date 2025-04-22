@@ -1,0 +1,59 @@
+syntax = "proto3";  
+  
+package UpperService;
+
+// 测试请求
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloResponse {
+  string message = 1;
+}
+
+// 图片请求消息  
+message ImageRequest {
+  string file_name = 1;
+  string part_id = 2;
+  string timestamp = 3;
+  bytes image_data = 4;
+}
+
+message GetFirstSnIdRequest {
+  string sn = 1;
+}
+
+message GetFirstSnIdReply {
+  uint64 sn_id = 1;
+}
+
+message UpdateSnIdRemarkRequest {
+    uint64 id = 1;
+    string remark = 2;
+}
+
+message InsertDataToDbRequest {
+    string sn = 1;
+    int64 feedstock_num = 2;
+    string result = 3;
+    string ng_type = 4;
+    string unitx_result = 5;
+    string DeviceID = 6;
+    string remark = 7;
+    string timestamp = 8;
+    bool is_timeout_sn = 9;
+}
+
+message CommonReply {
+  int32 code = 1;
+  string message = 2;
+}
+
+// 上位机服务定义  
+service UpperService {
+  rpc Hello (HelloRequest) returns (CommonReply) {}
+  rpc ImageHandler (ImageRequest) returns (CommonReply) {}
+  rpc GetFirstSnId (GetFirstSnIdRequest) returns (GetFirstSnIdReply) {}
+  rpc UpdateSnIdRemark (UpdateSnIdRemarkRequest) returns (CommonReply) {}
+  rpc InsertDataToDb (InsertDataToDbRequest) returns (CommonReply) {}
+}
