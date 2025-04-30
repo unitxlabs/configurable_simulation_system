@@ -90,7 +90,7 @@ const handleSaveSetting = (inputData, settingsData) => {
     })
     .catch(error => {
       ElMessage.error('保存失败');
-      console.error('保存失败:', error);
+      ElMessage.error('保存失败:', error);
     });
 }
 
@@ -164,7 +164,7 @@ const handleEditSetting = (setting) => {
     })
     .catch(error => {
       ElMessage.error('保存失败');
-      console.error('保存失败:', error);
+      ElMessage.error('保存失败:', error);
     });
 }
 const handleApplySetting = (setting) => {

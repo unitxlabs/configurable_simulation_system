@@ -1,9 +1,9 @@
-from typing import Dict, List, Optional
+from typing import Dict,Optional
 import logging
 from backend.modbus_tcp_client import ModbusTCP
-from backend.database import db_instance
-import time
+from threading import Thread
 from backend.image_count_util import ImageCountUtil
+# from backend.communication.run_prod_thread_to_db import run_proxy_server
 # 配置日志
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -117,6 +117,12 @@ class BaseCommunication:
                 self.modbus_client.write(slave_id=1, addr=address, val=request, datatype='int')
                 address += 33
             if communication_type==1:
+                # proxy_thread = Thread(
+                #     target=run_proxy_server,
+                #     args=(),
+                #     daemon=True
+                # )
+                # proxy_thread.start()
                 val=[0,4,44,45,40,36,74,8,12,16,20,24,28,32,36,46,53,54,94]
                 log.debug(f" write_fly config:address 100 ,data {val}")
                 self.modbus_client.write(slave_id=1, addr=100, val=val, datatype='int')
@@ -131,4 +137,10 @@ class BaseCommunication:
 
     def get_result(self) -> Optional[Dict]:
         """获取结果"""
+        raise NotImplementedError("子类必须实现此方法")
+    def run_server(self) -> bool:
+        """启动"""
+        raise NotImplementedError("子类必须实现此方法")
+    def stop_server(self) -> bool:
+        """停止"""
         raise NotImplementedError("子类必须实现此方法")

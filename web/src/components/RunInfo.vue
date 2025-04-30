@@ -56,7 +56,7 @@ const fetchStatus = async () => {
             stopDataFetching()
         }
     } catch (error) {
-        console.error("Error fetching status:", error);
+        ElMessage.error("Error fetching status:", error);
     }
 };
 
@@ -67,7 +67,7 @@ const run = async () => {
         taskStatus.value = response.status_code;
         startDataFetching();
     } catch (error) {
-        console.error("Error starting task:", error);
+        ElMessage.error("Error starting task:", error);
     }
 };
 
@@ -78,7 +78,7 @@ const togglePause = async () => {
             taskStatus.value = response.status_code;
             stopDataFetching();
         } catch (error) {
-            console.error("Error pausing task:", error);
+            ElMessage.error("Error pausing task:", error);
         }
     } else if (taskStatus.value === 2) {
         try {
@@ -86,7 +86,7 @@ const togglePause = async () => {
             taskStatus.value = response.status_code;
             startDataFetching();
         } catch (error) {
-            console.error("Error resuming task:", error);
+            ElMessage.error("Error resuming task:", error);
         }
     }
 };
@@ -98,7 +98,7 @@ const stop = async () => {
         taskStatus.value = response.status_code;
         stopDataFetching();
     } catch (error) {
-        console.error("Error stopping task:", error);
+        ElMessage.error("Error stopping task:", error);
     }
 };
 
@@ -126,7 +126,7 @@ const exportData = async () => {
 
         XLSX.writeFile(workbook, "data.xlsx");
     } catch (error) {
-        console.error("Error get result task:", error);
+        ElMessage.error("Error get result task:", error);
     }
 
 }

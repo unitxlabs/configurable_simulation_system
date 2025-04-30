@@ -6,6 +6,7 @@ from backend.database import db_instance
 from backend.communication.fixed_communication import FixedCommunication
 from backend.communication.base_communication import BaseCommunication
 from backend.communication.flying_communication import FlyingCommunication
+from backend.communication.flying_poller import PartProcessor
 import asyncio
 runRouter = APIRouter()
 # Task management
@@ -23,6 +24,7 @@ def background_task(c: BaseCommunication):
     print(communication_config)
     global task_running, task_status_code, task_result_id
     start_time = time.time()
+    c.run_server()
     while not stop_event.is_set():
         if not pause_event.is_set():
             print("Task is running...")
@@ -145,6 +147,8 @@ async def run_task():
             communication = FixedCommunication(c.global_communication_data)
         else:
             communication = FlyingCommunication(c.global_communication_data)
+            part_run = PartProcessor()
+            communication.set_part_processor(part_run)
 
         # 启动通信
         if not await communication.start():
@@ -152,18 +156,18 @@ async def run_task():
 
 
         # ✅ 启动任务线程
-        # stop_event.clear()
-        # pause_event.clear()
+        stop_event.clear()
+        pause_event.clear()
 
-        # task_thread = Thread(
-        #     target=background_task,
-        #     args=(communication,),
-        #     daemon=True
-        # )
-        # task_thread.start()
+        task_thread = Thread(
+            target=background_task,
+            args=(communication,),
+            daemon=True
+        )
+        task_thread.start()
 
-        # task_running = True
-        # task_status_code = 1  # 表示任务已启动
+        task_running = True
+        task_status_code = 1  # 表示任务已启动
 
         return {"message": "Task started", "status_code": task_status_code}
 

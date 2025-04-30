@@ -11,8 +11,8 @@ from xmlrpc.client import ServerProxy
 from backend.modbus_tcp_client import ModbusTCP
 sys.path.append('/home/unitx/unitx_data/config')
 
-from prod_api import ProdApiClient
-from flying_communication import *
+from backend.communication.prod_api import ProdApiClient
+from backend.communication.flying_communication import *
 
 from backend.communication.grpc.part_handler import update_sn_remark, insert_data_to_db
 
@@ -121,33 +121,42 @@ class PartProcessor(object):
         self.last_register_values = []
         self.warring_dict = {}
         self.is_sensor_error = False
+        self.stop_event = Event() 
+        self.process_stop_event = Event() 
 
-        self.connect_host()
+    def set_client(self,client):
+        self.client=client
+    def start_heartbeat(self):
+        self.stop_event.clear()
         self._init()
         self.write_plc_heartbeat()
         self.get_prod_heartbeat()
 
-    def connect_host(self):
-        self.client = ModbusTCP(host=self.host_ip, port=self.host_port)
-        self.client.start()
-        logger.info("start ModbusTcp client.")
-
     def write_plc_heartbeat(self):
-        Thread(target=self.plc_heartbeat).start()
+        self.plc_thread = Thread(target=self.plc_heartbeat)
+        self.plc_thread.start()
 
     def get_prod_heartbeat(self):
-        Thread(target=self.prod_heartbeat).start()
-
+        self.prod_thread = Thread(target=self.prod_heartbeat)
+        self.prod_thread.start()
+    def stop_heartbeat(self):
+        """优雅停止心跳线程"""
+        self.stop_event.set()
+        self.prod_thread.join()
+        self.plc_thread.join()
+    def stop_process(self):
+        self.process_stop_event.set()
+        self.process_thread.join()
     def plc_heartbeat(self):
         """心跳"""
         logger.debug("start plc heartbeat.")
-        while True:
-            time.sleep(PLC_HEARTBEAT_POLLER_TIME)
+        while not self.stop_event.is_set():
+            self.stop_event.wait(PLC_HEARTBEAT_POLLER_TIME)
             with self.client.locker:
                 heartbeat_val = self.client.read(addr=REGISTER_ADDR[PLC_HEARTBEAT]["addr"],
                                                  length=REGISTER_ADDR[PLC_HEARTBEAT]["length"])
             if heartbeat_val and not heartbeat_val[0]:
-                time.sleep(PLC_HEARTBEAT_WAIT_TIME)
+                self.stop_event.wait(PLC_HEARTBEAT_WAIT_TIME)
                 with self.client.locker:
                     self.client.write(addr=REGISTER_ADDR[PLC_HEARTBEAT]["addr"], val=1, datatype="int")
                     self.client.write(addr=REGISTER_ADDR[PROD_HEARTBEAT]["addr"], val=self.prod_status, datatype="int")
@@ -156,15 +165,18 @@ class PartProcessor(object):
     def prod_heartbeat(self):
         """prod 心跳"""
         logger.debug("start prod heartbeat.")
-        while True:
-            time.sleep(PROD_HEARTBEAT_POLLER_TIME)
+        while not self.stop_event.is_set():
+            self.stop_event.wait(PROD_HEARTBEAT_POLLER_TIME)
             self.prod_status = ProdApiClient.get_prod_system_status()
             logger.debug(f"get prod heartbeat ok, prod status {self.prod_status}.")
-
+    def start_process(self):
+        self.process_stop_event.clear()
+        self.process_thread = Thread(target=self.run_process)
+        self.process_thread.start()
     def run_process(self):
-        while True:
+        while not self.process_stop_event.is_set():
             try:
-                time.sleep(0.015)
+                self.stop_event.wait(0.015)
                 start_time = time.time()
                 logger.debug(f"start read register. start_time:{start_time}")
 
@@ -1105,7 +1117,7 @@ class PartProcessor(object):
             logger.error(f"pop_ part_id:{part_id} failed, part_result_dict:{proxy.part_result_dict}")
 
 
-def main():
+def run_flying_process():
     part_run = PartProcessor()
     part_run.run_process()
 

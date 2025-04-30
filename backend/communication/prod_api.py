@@ -6,7 +6,7 @@ import sys
 import enum
 sys.path.append('/home/unitx/unitx_data/config')
 import logging
-from flying_communication import  PROD_PORT
+PROD_PORT = 20020
 class ProdStatus(enum.Enum):
     PROD_STATUS_NOT_READY = 0
     PROD_STATUS_OK = 1

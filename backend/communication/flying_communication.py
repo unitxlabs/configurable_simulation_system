@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 import logging
 from backend.communication.base_communication import BaseCommunication
-
+from backend.communication.run_prod_thread_to_db import HttpProxy
 CAM1_ID = ""
 CAM2_ID = ""
 CAM3_ID = ""
@@ -10,8 +10,6 @@ CAM5_ID = ""
 CAM6_ID = ""
 
 PART_TYPE = "测试物料"
-
-PROD_PORT = 20020
 
 MODBUS_HOST = "127.0.0.1"
 MODBUS_PROT = 5020
@@ -269,6 +267,8 @@ SENSORS_MAP = {
 class FlyingCommunication(BaseCommunication):
     def __init__(self, config: Dict):
         super().__init__(config)
+        self.proxy=None
+        self.part_process=None
 
     def _generate_config_file(self) -> bool:
         """生成飞拍配置文件"""
@@ -402,3 +402,22 @@ class FlyingCommunication(BaseCommunication):
         except Exception as e:
             logging.error(f"获取结果失败: {e}")
             return None 
+    def set_part_processor(self, part_process):
+        self.part_process = part_process
+    def run_server(self) -> bool:
+        """启动"""
+        self.part_process.set_client(self.modbus_client)
+        self.part_process.start_heartbeat()
+        self.part_process.start_process()
+        self.proxy=HttpProxy()
+        self.proxy.start_proxy()
+        return True
+    def stop_server(self) -> bool:
+        """停止"""
+        if self.part_process:
+            self.part_process.stop_heartbeat()
+            self.part_process.stop_process()
+        self.modbus_client.disconnect()
+        if self.proxy:
+            self.proxy.stop_proxy()
+        return True

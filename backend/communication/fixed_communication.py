@@ -195,3 +195,10 @@ class FixedCommunication(BaseCommunication):
         except Exception as e:
             logging.error(f"获取结果失败: {e}")
             return None 
+    def run_server(self) -> bool:
+        """启动"""
+        return True
+    def stop_server(self) -> bool:
+        """停止"""
+        self.modbus_client.disconnect()
+        return True
