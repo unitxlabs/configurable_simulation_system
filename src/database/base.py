@@ -1009,12 +1009,15 @@ class SimulationResult(BaseOperations, Base):
             # Step 1: Separate filters for SimulationResult and CommunicationConfig
             filter_simulation = {}
             filter_communication = {}
+            filter_ipc_config = {}
 
             for key, value in data_dict.items():
-                if hasattr(SimulationResult, key) or hasattr(IPCPerformance, key) or hasattr(IPCConfig, key):
+                if hasattr(SimulationResult, key) or hasattr(IPCPerformance, key):
                     filter_simulation[key] = value
                 elif hasattr(WorkstationConfig, key) or hasattr(ControllerConfig, key) or hasattr(CommunicationConfig, key):
                     filter_communication[key] = value
+                elif hasattr(IPCConfig, key):
+                    filter_ipc_config[key] = value
 
             # Step 2: Query SimulationResult based on filter_simulation
             query = session.query(cls).join(IPCPerformance).join(IPCConfig)  # Start building the query
@@ -1028,10 +1031,22 @@ class SimulationResult(BaseOperations, Base):
                         query = query.filter(column == value)
 
             queried_simulation_results = query.all() # Fetch all matching records
+            filtered_queried_simulation_results = []
+            for simulation_result in queried_simulation_results:
+                query_ipc_config_data = []
+                for ipc_config_id in simulation_result.ipcs_config_id:
+                    query_ipc_config_data_dict = {"id": ipc_config_id}
+                    query_ipc_config_data_dict.update(filter_ipc_config)
+                    query_data = IPCConfig.query_data(session, data_dict=query_ipc_config_data_dict)
+                    query_ipc_config_data.extend(query_data)
+                if query_ipc_config_data:
+                    filtered_queried_simulation_results.append(simulation_result)
+            queried_simulation_results = filtered_queried_simulation_results
 
             # Step 3: Query CommunicationConfig based on filter_communication
             queried_communication_configs = CommunicationConfig.query_data(session, filter_communication)
             queried_communication_config_ids = {ws["communication_config"]["id"] for ws in queried_communication_configs}
+
 
             # Step 4: Filter SimulationResult based on                 elif hasattr(WorkstationConfig, key) or hasattr(ControllerConfig, key) or hasattr(CommunicationConfig, key):
             filtered_simulation_results = []
