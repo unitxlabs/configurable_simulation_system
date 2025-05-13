@@ -179,6 +179,7 @@ def get_controller_select_data(
             for option in select_options
             if option["label"] in valid_controller_types
         ]
+    #select_options = list({frozenset(option.items()): option for option in select_options}.values())
     return CommonResponse(msg="获取成功", data=select_options)
 
 

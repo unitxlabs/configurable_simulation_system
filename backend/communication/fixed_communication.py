@@ -12,7 +12,8 @@ def transform_data(data):
     workstation_configs = data["workstation_configs"]
     # 生成转换后的数据
     result = []
-    address = 7526  # 初始化地址
+    address = 2584  # 初始化地址
+    part_id_address = 520
     for i, ws_config in enumerate(workstation_configs):
         if workstations_in_use[i]:
             workstation_id = ws_config["workstation_config"]["workstation_id"]
@@ -29,9 +30,8 @@ def transform_data(data):
                     {"camera_id": camera_id, "controller_port_id": controller_port_id}
                 )
             current_address = address
-            address += 2  # signal的address使用current_address，然后address加2
-            part_id_address = address
-            address += 2  # part_id的address
+            address += 1  # signal的address使用current_address，然后address加2
+            part_id_address += 256  # part_id的address
 
             # 生成station_done字段
             station_done = {
@@ -43,7 +43,7 @@ def transform_data(data):
                     }
                 },
                 "part_id": {
-                    "request": {"address": str(part_id_address), "length": "1"}
+                    "request": {"address": str(part_id_address), "length": "254"}
                 },
             }
 
@@ -68,28 +68,28 @@ class FixedCommunication(BaseCommunication):
             plc_config = {
                 "plcs": [
                     {
-                        "ip": "127.0.0.1",
-                        "port": "5020",
-                        "protocol": "Modbus TCP",
+                        "ip": "192.168.0.1",
+                        "port": "48818",
+                        "protocol": "s7_pro",
                         "name": "the_name_of_plc",
                         "addresses": {
                             "part_start": {
                                 "signal": {
                                     "request": {
-                                        "address": "7500",
+                                        "address": "2572",
                                         "length": "1",
                                         "default_signal": [0, 1, 2]
                                     }
                                 },
                                 "part_id": {
                                     "request": {
-                                        "address": "7502",
+                                        "address": "264",
                                         "length": "1"
                                     }
                                 },
                                 "part_type": {
                                     "request": {
-                                        "address": "7504",
+                                        "address": "8",
                                         "length": "1"
                                     }
                                 }
@@ -97,20 +97,20 @@ class FixedCommunication(BaseCommunication):
                             "part_end": {
                                 "signal": {
                                     "request": {
-                                        "address": "7506",
+                                        "address": "2575",
                                         "length": "1",
                                         "default_signal": [0, 1, 2]
                                     }
                                 },
                                 "part_id": {
                                     "request": {
-                                        "address": "7508",
+                                        "address": "264",
                                         "length": "1"
                                     }
                                 },
                                 "part_type": {
                                     "request": {
-                                        "address": "7510",
+                                        "address": "8",
                                         "length": "1"
                                     }
                                 }
@@ -118,20 +118,20 @@ class FixedCommunication(BaseCommunication):
                             "part_result": {
                                 "signal": {
                                     "request": {
-                                        "address": "7512",
+                                        "address": "2578",
                                         "length": "1",
                                         "default_signal": [0, 1, 2]
                                     }
                                 },
                                 "part_id": {
                                     "request": {
-                                        "address": "7514",
+                                        "address": "264",
                                         "length": "1"
                                     }
                                 },
-                                "result": {
+                                "part_type": {
                                     "request": {
-                                        "address": "7516",
+                                        "address": "8",
                                         "length": "1"
                                     }
                                 }
@@ -139,7 +139,7 @@ class FixedCommunication(BaseCommunication):
                             "sys_reset": {
                                 "signal": {
                                     "request": {
-                                        "address": "7518",
+                                        "address": "2313",
                                         "length": "1",
                                         "default_signal": [0, 1, 2]
                                     }
@@ -148,7 +148,7 @@ class FixedCommunication(BaseCommunication):
                             "sys_heartbeat": {
                                 "signal": {
                                     "request": {
-                                        "address": "7520",
+                                        "address": "2312",
                                         "length": "1",
                                         "default_signal": [0, 1, 2]
                                     }
@@ -157,15 +157,15 @@ class FixedCommunication(BaseCommunication):
                             "sys_alarm": {
                                 "signal": {
                                     "request": {
-                                        "address": "7522",
-                                        "length": "1",
+                                        "address": "2314",
+                                        "length": "2",
                                         "default_signal": [0, 1, 2]
                                     }
                                 },
                                 "alarm_type": {
                                     "request": {
-                                        "address": "7524",
-                                        "length": "1"
+                                        "address": "2316",
+                                        "length": "254"
                                     }
                                 }
                             },
@@ -190,7 +190,7 @@ class FixedCommunication(BaseCommunication):
             return None
             
         try:
-            result=self.modbus_client.read(slave_id=1, addr=7516, length=1, datatype='int')[0]
+            result=self.snap_client.read(address="2578",  datatype='int')
             return result
         except Exception as e:
             logging.error(f"获取结果失败: {e}")
@@ -200,5 +200,5 @@ class FixedCommunication(BaseCommunication):
         return True
     def stop_server(self) -> bool:
         """停止"""
-        self.modbus_client.disconnect()
+        self.snap_client.disconnect()
         return True

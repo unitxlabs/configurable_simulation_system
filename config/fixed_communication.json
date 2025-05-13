@@ -1,15 +1,15 @@
 {
     "plcs": [
         {
-            "ip": "127.0.0.1",
-            "port": "5020",
-            "protocol": "Modbus TCP",
+            "ip": "192.168.0.1",
+            "port": "48818",
+            "protocol": "s7_pro",
             "name": "the_name_of_plc",
             "addresses": {
                 "part_start": {
                     "signal": {
                         "request": {
-                            "address": "7500",
+                            "address": "2572",
                             "length": "1",
                             "default_signal": [
                                 0,
@@ -20,13 +20,13 @@
                     },
                     "part_id": {
                         "request": {
-                            "address": "7502",
+                            "address": "264",
                             "length": "1"
                         }
                     },
                     "part_type": {
                         "request": {
-                            "address": "7504",
+                            "address": "8",
                             "length": "1"
                         }
                     }
@@ -34,7 +34,7 @@
                 "part_end": {
                     "signal": {
                         "request": {
-                            "address": "7506",
+                            "address": "2575",
                             "length": "1",
                             "default_signal": [
                                 0,
@@ -45,13 +45,13 @@
                     },
                     "part_id": {
                         "request": {
-                            "address": "7508",
+                            "address": "264",
                             "length": "1"
                         }
                     },
                     "part_type": {
                         "request": {
-                            "address": "7510",
+                            "address": "8",
                             "length": "1"
                         }
                     }
@@ -59,7 +59,7 @@
                 "part_result": {
                     "signal": {
                         "request": {
-                            "address": "7512",
+                            "address": "2578",
                             "length": "1",
                             "default_signal": [
                                 0,
@@ -70,13 +70,13 @@
                     },
                     "part_id": {
                         "request": {
-                            "address": "7514",
+                            "address": "264",
                             "length": "1"
                         }
                     },
-                    "result": {
+                    "part_type": {
                         "request": {
-                            "address": "7516",
+                            "address": "8",
                             "length": "1"
                         }
                     }
@@ -84,7 +84,7 @@
                 "sys_reset": {
                     "signal": {
                         "request": {
-                            "address": "7518",
+                            "address": "2313",
                             "length": "1",
                             "default_signal": [
                                 0,
@@ -97,7 +97,7 @@
                 "sys_heartbeat": {
                     "signal": {
                         "request": {
-                            "address": "7520",
+                            "address": "2312",
                             "length": "1",
                             "default_signal": [
                                 0,
@@ -110,8 +110,8 @@
                 "sys_alarm": {
                     "signal": {
                         "request": {
-                            "address": "7522",
-                            "length": "1",
+                            "address": "2314",
+                            "length": "2",
                             "default_signal": [
                                 0,
                                 1,
@@ -121,28 +121,24 @@
                     },
                     "alarm_type": {
                         "request": {
-                            "address": "7524",
-                            "length": "1"
+                            "address": "2316",
+                            "length": "254"
                         }
                     }
                 },
                 "station": [
                     {
-                        "name": "飞拍配置1_6",
+                        "name": "dingpai_1",
                         "camera": [
                             {
                                 "camera_id": "DA0168512",
-                                "controller_port_id": "3232238091"
-                            },
-                            {
-                                "camera_id": "11111111",
                                 "controller_port_id": "3232238091"
                             }
                         ],
                         "station_done": {
                             "signal": {
                                 "request": {
-                                    "address": "7526",
+                                    "address": "2584",
                                     "length": "1",
                                     "default_signal": [
                                         0,
@@ -153,8 +149,148 @@
                             },
                             "part_id": {
                                 "request": {
-                                    "address": "7528",
-                                    "length": "1"
+                                    "address": "776",
+                                    "length": "254"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "dingpai_3",
+                        "camera": [
+                            {
+                                "camera_id": "DA0168512",
+                                "controller_port_id": "3232238091"
+                            }
+                        ],
+                        "station_done": {
+                            "signal": {
+                                "request": {
+                                    "address": "2585",
+                                    "length": "1",
+                                    "default_signal": [
+                                        0,
+                                        1,
+                                        2
+                                    ]
+                                }
+                            },
+                            "part_id": {
+                                "request": {
+                                    "address": "1032",
+                                    "length": "254"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "dingpai_4",
+                        "camera": [
+                            {
+                                "camera_id": "DA0168512",
+                                "controller_port_id": "3232238091"
+                            }
+                        ],
+                        "station_done": {
+                            "signal": {
+                                "request": {
+                                    "address": "2586",
+                                    "length": "1",
+                                    "default_signal": [
+                                        0,
+                                        1,
+                                        2
+                                    ]
+                                }
+                            },
+                            "part_id": {
+                                "request": {
+                                    "address": "1288",
+                                    "length": "254"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "dingpai_2",
+                        "camera": [
+                            {
+                                "camera_id": "DA0168512",
+                                "controller_port_id": "3232238091"
+                            }
+                        ],
+                        "station_done": {
+                            "signal": {
+                                "request": {
+                                    "address": "2587",
+                                    "length": "1",
+                                    "default_signal": [
+                                        0,
+                                        1,
+                                        2
+                                    ]
+                                }
+                            },
+                            "part_id": {
+                                "request": {
+                                    "address": "1544",
+                                    "length": "254"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "dingpai_5",
+                        "camera": [
+                            {
+                                "camera_id": "DA0168512",
+                                "controller_port_id": "3232238091"
+                            }
+                        ],
+                        "station_done": {
+                            "signal": {
+                                "request": {
+                                    "address": "2588",
+                                    "length": "1",
+                                    "default_signal": [
+                                        0,
+                                        1,
+                                        2
+                                    ]
+                                }
+                            },
+                            "part_id": {
+                                "request": {
+                                    "address": "1800",
+                                    "length": "254"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "dingpai_6",
+                        "camera": [
+                            {
+                                "camera_id": "DA0168512",
+                                "controller_port_id": "3232238091"
+                            }
+                        ],
+                        "station_done": {
+                            "signal": {
+                                "request": {
+                                    "address": "2589",
+                                    "length": "1",
+                                    "default_signal": [
+                                        0,
+                                        1,
+                                        2
+                                    ]
+                                }
+                            },
+                            "part_id": {
+                                "request": {
+                                    "address": "2056",
+                                    "length": "254"
                                 }
                             }
                         }

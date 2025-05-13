@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 import logging
 from backend.communication.base_communication import BaseCommunication
-from backend.communication.run_prod_thread_to_db import HttpProxy
+# from backend.communication.run_prod_thread_to_db import HttpProxy
 CAM1_ID = ""
 CAM2_ID = ""
 CAM3_ID = ""
@@ -397,7 +397,7 @@ class FlyingCommunication(BaseCommunication):
             return None
             
         try:
-            result=self.modbus_client.read(slave_id=1, addr=7516, length=1, datatype='int')[0]
+            result=self.snap_client.read(slave_id=1, addr=7516, length=1, datatype='int')[0]
             return result
         except Exception as e:
             logging.error(f"获取结果失败: {e}")
@@ -406,18 +406,18 @@ class FlyingCommunication(BaseCommunication):
         self.part_process = part_process
     def run_server(self) -> bool:
         """启动"""
-        self.part_process.set_client(self.modbus_client)
+        self.part_process.set_client(self.snap_client)
         self.part_process.start_heartbeat()
         self.part_process.start_process()
-        self.proxy=HttpProxy()
-        self.proxy.start_proxy()
+        # self.proxy=HttpProxy()
+        # self.proxy.start_proxy()
         return True
     def stop_server(self) -> bool:
         """停止"""
         if self.part_process:
             self.part_process.stop_heartbeat()
             self.part_process.stop_process()
-        self.modbus_client.disconnect()
+        self.snap_client.disconnect()  
         if self.proxy:
             self.proxy.stop_proxy()
         return True

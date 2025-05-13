@@ -8,7 +8,6 @@ from datetime import datetime
 from threading import Thread, Lock, Event
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.client import ServerProxy
-from backend.modbus_tcp_client import ModbusTCP
 sys.path.append('/home/unitx/unitx_data/config')
 
 from backend.communication.prod_api import ProdApiClient

@@ -49,6 +49,7 @@ def get_data_list(
         data_dict["model_count"] = model_count
     if defect_count:
         data_dict["defect_count"] = defect_count
+    print(data_dict)
     query_data = db_instance.query_data(
         table_name="simulation_result", data_dict=data_dict
     )
