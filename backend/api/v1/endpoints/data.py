@@ -13,10 +13,10 @@ def get_data_list(
     gpu: Optional[str] = Query(None, description="GPU 参数"),
     camera_count: Optional[int] = Query(None, description="摄像头数量"),
     camera_resolution: Optional[str] = Query(None, description="摄像头分辨率"),
-    material_image_count: Optional[int] = Query(None, description="素材图片数量"),
-    material_inference_times: Optional[int] = Query(None, description="素材推理次数"),
-    model_count: Optional[int] = Query(None, description="模型数量"),
-    defect_count: Optional[int] = Query(None, description="缺陷数量"),
+    total_image_count: Optional[int] = Query(None, description="素材图片数量"),
+    total_inference_count: Optional[int] = Query(None, description="素材推理次数"),
+    # model_count: Optional[int] = Query(None, description="模型数量"),
+    each_ng_type_defect_count: Optional[int] = Query(None, description="缺陷数量"),
 ):
     # todo 获取数据
     print(
@@ -26,29 +26,29 @@ def get_data_list(
             "gpu": gpu,
             "camera_count": camera_count,
             "camera_resolution": camera_resolution,
-            "material_image_count": material_image_count,
-            "material_inference_times": material_inference_times,
-            "model_count": model_count,
-            "defect_count": defect_count,
+            "total_image_count": total_image_count,
+            "total_inference_count": total_inference_count,
+            # "model_count": model_count,
+            "each_ng_type_defect_count": each_ng_type_defect_count,
         }
     )
     data_dict = {}
     if cpu:
         data_dict["cpu"] = cpu
     if gpu:
-        data_dict["gpu"] = gpu.split(",")
+        data_dict["gpus"] = gpu.split(",")
     if camera_count:
-        data_dict["camera_count"] = [camera_count]
+        data_dict["camera_count"] = camera_count
     if camera_resolution:
         data_dict["camera_resolution"] = camera_resolution
-    if material_image_count:
-        data_dict["material_image_count"] = material_image_count
-    if material_inference_times:
-        data_dict["material_inference_times"] = [material_inference_times]
-    if model_count:
-        data_dict["model_count"] = model_count
-    if defect_count:
-        data_dict["defect_count"] = defect_count
+    if total_image_count:
+        data_dict["total_image_count"] = total_image_count
+    if total_inference_count:
+        data_dict["total_inference_count"] = total_inference_count
+    # if model_count:
+    #     data_dict["model_count"] = model_count
+    if each_ng_type_defect_count:
+        data_dict["each_ng_type_defect_count"] = each_ng_type_defect_count
     print(data_dict)
     query_data = db_instance.query_data(
         table_name="simulation_result", data_dict=data_dict

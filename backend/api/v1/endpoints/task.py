@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from threading import Thread, Event
 import backend.api.v1.endpoints.communication as c
 import time
+import copy
 from backend.database import db_instance
 from backend.communication.fixed_communication import FixedCommunication
 from backend.communication.base_communication import BaseCommunication
@@ -57,7 +58,7 @@ def background_task(c: BaseCommunication):
                     "each_ng_type_defect_count": 5,
                     # ipc information
                     "ipc_count": 1,
-                    "ipcs_config_id": ["9"],
+                    "ipcs_config_id": ["4"],
                     # communication information
                     "communication_config_ids": [communication_config.get("id")],
                     "is_image_saving": False,
@@ -155,70 +156,12 @@ async def run_task():
         #         "message": f"PLC操作失败: {str(e)}",
         #         "status_code": task_status_code,
         #     }
-
-
-
-        # communication_config = c.global_communication_data.get("communication_config", {})
-        # workstation_in_use = communication_config.get("workstations_in_use", [False, False, False, False, False, False])
-        # workstation_config_ids = communication_config.get("workstation_config_ids", [])
-        # workstation_use_request = []
-        # workstation_use_ids = []
-            
-        # for i in range(6):
-        #     if workstation_in_use[i]:
-        #         workstation_use_request.append(1)
-        #         workstation_use_ids.append(workstation_config_ids[i])
-        #     else:
-        #         workstation_use_request.append(0)
-                    
-        # workstation_configs = c.global_communication_data.get("workstation_configs", [])
-        # workstation_use_configs = []
-        # for workstation_config in workstation_configs:
-        #     wc = workstation_config.get("workstation_config", {})
-        #     if wc.get("id", 0) in workstation_use_ids:
-        #         workstation_use_configs.append(workstation_config)
-
-        # communication_type = communication_config.get("communication_type", 0)
-        # communication_step = communication_config.get("communication_step", 0)
-        # communication_type_request = [communication_type, communication_step]
-
-        # part_type = communication_config.get("part_type", "物料")
-        # part_interval = int(communication_config.get("part_interval", 0))
-        # part_start_to_ws1_interval = int(communication_config.get("part_start_to_ws1_interval", 0))
-        # print(f"📝_write_workstation_use: {workstation_use_request}")
-        # print(f"_write_communication: {communication_type_request}")
-        # print(f"_write_part_start:{part_type} {part_interval}")
-        # ws_next_interval=[part_start_to_ws1_interval]
-        # camera_reset_time=[]
-        # ws_seq_count=[]
-
-        # for workstation_config_data in workstation_use_configs:
-        #     workstation_config = workstation_config_data.get("workstation_config", {})
-        #     ws_next_interval.append(int(workstation_config.get("to_next_ws_offset", 0)))
-        #     camera_reset_time.append(int(workstation_config.get("camera_reset_time", 0)))
-        #     ws_seq_count.append(workstation_config.get("sequence_count", 0))
-        #     print(workstation_config)
-        #     sequences_ids = workstation_config.get("sequences_id", [])
-        #     print(sequences_ids)
-        #         # 如果sequences_ids长度小于10，补0到10个元素
-        #     if len(sequences_ids) < 10:
-        #         sequences_ids.extend([0] * (10 - len(sequences_ids)))
-        #     sequences_intervals = workstation_config.get("sequences_interval", [])
-        #     print(sequences_intervals)
-        #         # 如果sequences_intervals长度小于10，补0到10个元素
-        #     if len(sequences_intervals) < 10:
-        #         sequences_intervals.extend([0] * (10 - len(sequences_intervals)))
-
-        #     print(f"data {sequences_ids}")
-        #     print(f"data {sequences_intervals}")
-        # print(ws_next_interval)
-        # print(camera_reset_time)
-        # print(ws_seq_count)
+        config=copy.deepcopy(c.global_communication_data)
         # 创建通信实例
         if c.global_communication_data.get("communication_config", {}).get("communication_type") == 0:
-            communication = FixedCommunication(c.global_communication_data)
+            communication = FixedCommunication(config)
         else:
-            communication = FlyingCommunication(c.global_communication_data)
+            communication = FlyingCommunication(config)
             part_run = PartProcessor()
             communication.set_part_processor(part_run)
 

@@ -16,6 +16,15 @@
                                 1,
                                 2
                             ]
+                        },
+                        "ack": {
+                            "address": "2574",
+                            "length": "1",
+                            "default_signal": [
+                                0,
+                                1,
+                                2
+                            ]
                         }
                     },
                     "part_id": {
@@ -35,6 +44,15 @@
                     "signal": {
                         "request": {
                             "address": "2575",
+                            "length": "1",
+                            "default_signal": [
+                                0,
+                                1,
+                                2
+                            ]
+                        },
+                        "ack": {
+                            "address": "2577",
                             "length": "1",
                             "default_signal": [
                                 0,
@@ -138,7 +156,7 @@
                         "station_done": {
                             "signal": {
                                 "request": {
-                                    "address": "2584",
+                                    "address": "2638",
                                     "length": "1",
                                     "default_signal": [
                                         0,
@@ -166,7 +184,7 @@
                         "station_done": {
                             "signal": {
                                 "request": {
-                                    "address": "2585",
+                                    "address": "2639",
                                     "length": "1",
                                     "default_signal": [
                                         0,
@@ -194,7 +212,7 @@
                         "station_done": {
                             "signal": {
                                 "request": {
-                                    "address": "2586",
+                                    "address": "2640",
                                     "length": "1",
                                     "default_signal": [
                                         0,
@@ -222,7 +240,7 @@
                         "station_done": {
                             "signal": {
                                 "request": {
-                                    "address": "2587",
+                                    "address": "2641",
                                     "length": "1",
                                     "default_signal": [
                                         0,
@@ -250,7 +268,7 @@
                         "station_done": {
                             "signal": {
                                 "request": {
-                                    "address": "2588",
+                                    "address": "2642",
                                     "length": "1",
                                     "default_signal": [
                                         0,
@@ -278,7 +296,7 @@
                         "station_done": {
                             "signal": {
                                 "request": {
-                                    "address": "2589",
+                                    "address": "2643",
                                     "length": "1",
                                     "default_signal": [
                                         0,

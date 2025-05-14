@@ -90,7 +90,7 @@ class Proxy(Thread):
 
 
 class PartProcessor(object):
-    def __init__(self, host_ip=MODBUS_HOST, host_port=MODBUS_PROT):
+    def __init__(self, host_ip=SNAP7_HOST, host_port=SNAP7_PORT):
         self.host_ip = host_ip
         self.host_port = host_port
         self.client = None
