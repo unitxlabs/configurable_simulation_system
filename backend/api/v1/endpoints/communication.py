@@ -16,7 +16,7 @@ global_communication_data = {}
 
 @communicationRouter.get("/data", response_model=CommonResponse)
 def get_communication_data(
-    communication_type: int = Query(0, description=""),
+    communication_type: int = Query(2, description=""),
     part_type: Optional[str] = Query(None, description=""),
     part_interval: Optional[int] = Query(None, description=""),
 ):

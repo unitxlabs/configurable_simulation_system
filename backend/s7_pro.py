@@ -1,6 +1,6 @@
 import snap7
 import time
-
+import snap7.util
 from backend.communication_base import *
 from backend.address_protocol_scripts import *
 
@@ -56,7 +56,7 @@ class S7Pro(CommunicationBase):
             elif datatype in ["float", "int32"]:
                 return 4 * length
             elif datatype == "str":
-                return 256 * length if is_read else 254 * length
+                return 254 * length if is_read else 254 * length
             else:
                 return 2 * length
 
@@ -82,11 +82,11 @@ class S7Pro(CommunicationBase):
         return_bytes = b''
         total_len_bytes = len(bytes_str)
         split_bytes_list = []
-        for i in range(0, total_len_bytes, 256):
-            split_bytes_list.append(bytes_str[i:i + 256])
+        for i in range(0, total_len_bytes, 254):
+            split_bytes_list.append(bytes_str[i:i + 254])
 
         for split_bytes in split_bytes_list:
-            return_bytes += split_bytes[2:]
+            return_bytes += split_bytes[0:]
 
         return return_bytes
 
@@ -123,7 +123,6 @@ class S7Pro(CommunicationBase):
         decode = kwargs.get("decode", "default")
         reverse = kwargs.get("reverse", False)
         normal = kwargs.get("normal", True)
-
         response = self.communication_fd.db_read(self.db_number, address, size)
         return self._decode_from_read(response=response, datatype=datatype, decode=decode, reverse=reverse,
                                       normal=normal, bool_bit=bool_bit)
@@ -261,19 +260,23 @@ class S7Pro(CommunicationBase):
         elif datatype == 'int':
             response = bytes_to_int(response)
         elif datatype == 'str':
-            response = cls.read_bytes_to_bytes_str(response)
-            if decode == "default":
-                response = bytes_to_str_default(response, reverse)
-            elif decode == "unicode":
-                response = bytes_to_str_unicode(response)
-            elif decode == "high":
-                response = bytes_to_str_high(response)
-            elif decode == "low":
-                response = bytes_to_str_low(response)
+            ret = snap7.util.get_string(response, 0)
+            if ret == "":
+                response= [ret]
             else:
-                raise Exception(f"Read Error: Unsupported str decode: {decode}")
-            if normal:
-                response = get_normal_char(response)
+                response = cls.read_bytes_to_bytes_str(response)
+                if decode == "default":
+                    response = bytes_to_str_default(response, reverse)
+                elif decode == "unicode":
+                    response = bytes_to_str_unicode(response)
+                elif decode == "high":
+                    response = bytes_to_str_high(response)
+                elif decode == "low":
+                    response = bytes_to_str_low(response)
+                else:
+                    raise Exception(f"Read Error: Unsupported str decode: {decode}")
+                if normal:
+                    response = get_normal_char(response)
         elif datatype == 'float':
             response = four_bytes_reverse(response)
             response = bytes_to_float(response)
@@ -314,6 +317,18 @@ class S7Pro(CommunicationBase):
 if __name__ == "__main__":
     snap7_obj = S7Pro(host="192.168.0.1", port=44818, rack=0, slot=1, callback=None)
     print(f"Snap7 connected: {snap7_obj.connect()}")
+    # print(f'Address:1_2662 wrote:{snap7_obj.write(address="3",value=1, datatype="int8")}')
+    # print(f'Address:1_2662 read:{snap7_obj.read(address="3",length=1,datatype="int8")}')
+    print(f'Address:1_2662 wrote:{snap7_obj.write(address="272",value="db_number22222", datatype="str")}')
+    # print(f'Address:1_2662 wrote:{snap7_obj.write(address="2576",value=1, datatype="int8")}')
+    print(f'Address:1_2662 read:{snap7_obj.write(address="4",value=1,datatype="int8")}')
+    # print(f'Address:1_2662 read:{snap7_obj.read(address="4",length=1,datatype="int8")}')
+    # print(f'Address:1_2662 read:{snap7_obj.read(address="272", datatype="str")}')
+    # print(f'Address:1_2662 read:{snap7_obj.read(address="2576",length=1,datatype="int8")}')
+    # print(f'Address:1_2662 read:{snap7_obj.read(address="4",length=1,datatype="int8")}')
+    # print(f'Address:1_2662 read:{snap7_obj.read(address="16",datatype="str")}')
+    # print(f'Address:1_2662 read:{snap7_obj.read(address="272",datatype="str")}')
+    # print(f'Address:1_2662 read:{snap7_obj.read(address="528",datatype="str")}')
     # print(
     #     f'Address:1_0 wrote:{snap7_obj.write(address="0", value=[True], datatype="bool")}'
     # )
@@ -328,8 +343,8 @@ if __name__ == "__main__":
     # print(f'STR write:{snap7_obj.write(address="0", value="Abcd1234" * 96, length=384, datatype="str")}')
     # print(f'Address:1_2656 wrote:{snap7_obj.write(address="8",value="asd", datatype="str")}')
     # print(f'Address:1_2656 wrote:{snap7_obj.read(address="8",datatype="str")}')
-    print(f'Address:1_2662 wrote:{snap7_obj.write(address="2662",value=[6,0,0,0,0,0,0,0,0,6], datatype="int8")}')
-    print(f'Address:1_2662 wrote:{snap7_obj.read(address="2662",length=10,datatype="int8")}')
+    # print(f'Address:1_2662 wrote:{snap7_obj.write(address="2662",value=[6,0,0,0,0,0,0,0,0,6], datatype="int8")}')
+    # print(f'Address:1_2662 wrote:{snap7_obj.read(address="2662",length=10,datatype="int8")}')
     # print(f'BOOL_BIT read:{snap7_obj.read(address="768", bool_bit=0, length=2, datatype="bool")}')
     # print(f'BOOL_BIT write:{snap7_obj.write(address="768", bool_bit=0, length=2, value=False, datatype="bool")}')
 

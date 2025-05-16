@@ -31,7 +31,62 @@ else:
     UNITX_DATA_PATH = "/home/unitx/unitx_data"
 
 logger = formatted_logging.FormattedLogging(__name__).getLog()
+def create_benchmark_config(base_benchmark_config: dict, camera_resolution: str, model_resolution: str,
+                            seq_interval_ms: int, share_memory_interval_time: int = 40,
+                            max_benchmark_time: int = 7200) -> dict:
+    camera_resolution_map = {
+        '5mp': (2448, 2048),
+        '12mp': (4096, 3008),
+        '24mp': (5328, 4608),
+    }
+    camera_width, camera_height = camera_resolution_map[camera_resolution]
 
+    model_resolution_map = {
+        '1mp': (960, 803),
+        '3mp': (1900, 1589),
+        '5mp': (2448, 2048),
+        '7mp': (3100, 2276),
+        '9mp': (3500, 2570),
+        '12mp': (4096, 3008),
+        '16mp': (4300, 3718),
+        '20mp': (4800, 4151),
+        '24mp': (5328, 4608),
+    }
+    model_width, model_height = model_resolution_map[model_resolution]
+    enable_sdk = os.getenv('enabled_sdk', False)
+    result_benchmark_config = {
+        'seq_interval_ms': seq_interval_ms,
+        'is_save_image': True,
+        'enable_sdk': enable_sdk,
+        'camera_width': camera_width,
+        'camera_height': camera_height,
+        'camera_resolution': camera_resolution,
+        'model_name': f'network_{camera_resolution}_{model_resolution}',
+        'model_width': model_width,
+        'model_height': model_height,
+        'model_resolution': model_resolution,
+        'network_architecture': 'v4',
+        'ng_type_number': 10,
+        'each_ng_type_defect_number': 5,
+        'edge_name':'Test'
+    }
+    # result_benchmark_config.update(base_benchmark_config)
+    # result_benchmark_config.update(register_map_func(base_benchmark_config['register_first_twice']))
+    result_benchmark_config['max_benchmark_time'] = max_benchmark_time
+    result_benchmark_config['share_memory_interval_time'] = share_memory_interval_time
+
+    return result_benchmark_config
+
+
+def register_map_func(register_first_twice) -> dict:
+    return {
+        'benchmark_mode': int(f'{register_first_twice}00'),
+        'benchmark_trigger_interval_ms': int(f'{register_first_twice}02'),
+        'benchmark_reset_interval_ms': int(f'{register_first_twice}88'),
+        'benchmark_counter': int(f'{register_first_twice}26'),
+        'benchmark_temp_counter': int(f'{register_first_twice}86'),
+        'benchmark_mismatch_images_flag': int(f'{register_first_twice}73'),
+    }
 
 class DataMonitor(object):
     REPORT_FILE_NAME = "simulation_results.xlsx"

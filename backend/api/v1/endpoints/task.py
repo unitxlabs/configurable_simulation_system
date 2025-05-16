@@ -158,7 +158,7 @@ async def run_task():
         #     }
         config=copy.deepcopy(c.global_communication_data)
         # 创建通信实例
-        if c.global_communication_data.get("communication_config", {}).get("communication_type") == 0:
+        if c.global_communication_data.get("communication_config", {}).get("communication_type") == 2:
             communication = FixedCommunication(config)
         else:
             communication = FlyingCommunication(config)

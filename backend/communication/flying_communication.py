@@ -9,13 +9,8 @@ CAM4_ID = ""
 CAM5_ID = ""
 CAM6_ID = ""
 
-PART_TYPE = "测试物料"
-
-SNAP7_HOST = "127.0.0.1"
-SNAP7_PORT = 5020
-SLAVE_ID = 1
-
-CACHE_PROXY_HOST = "127.0.0.1"
+PART_TYPE = "EMP"
+CACHE_PROXY_HOST = "192.168.1.1"
 CACHE_PROXY_PROT = 8048
 
 
@@ -52,15 +47,12 @@ PART_RESULT_SN = "part_result_sn"
 PART_RESULT_MSG = "part_result_msg"
 
 
-# plc的地址除2, 才是MODBUS client抵达的地址。(plc系统是64位linux)
-# 以下地址及长度全是plc的地址除2。like：plc 8000 --> AOI 4000
-# PART_RESULT 地址46置1 OK，地址47置1 NG1 地址48置1 NG2
 INT_LENGTH = 1
 SN_LENGTH = 20
 TIME_STAMP_LENGTH = 4
 REGISTER_ADDR_LENGTH = 100  # 读取长度
 REGISTER_ADDR = {
-    PLC_HEARTBEAT:     {"addr": 0,   "length": INT_LENGTH,        "type": int,     "is_read": True},   # 心跳
+    PLC_HEARTBEAT:     {"addr": 1_3,   "length": INT_LENGTH,        "type": "int8",     "is_read": True},   # 心跳
     PLC_TIME_STAMP:    {"addr": 4,   "length": TIME_STAMP_LENGTH, "type": "ulint", "is_read": True},   # plc当前时间
     PLC_RESET:         {"addr": 44,  "length": INT_LENGTH,        "type": int,     "is_read": True},   # 初始化
     PLC_RESET_ACK:     {"addr": 45,  "length": INT_LENGTH,        "type": int,     "is_read": False},  # 初始化ack
@@ -397,8 +389,8 @@ class FlyingCommunication(BaseCommunication):
             return None
             
         try:
-            result=self.snap_client.read(slave_id=1, addr=7516, length=1, datatype='int')[0]
-            return result
+            # result=self.snap_client.read(slave_id=1, addr=7516, length=1, datatype='int')[0]
+            return 0
         except Exception as e:
             logging.error(f"获取结果失败: {e}")
             return None 
@@ -409,8 +401,6 @@ class FlyingCommunication(BaseCommunication):
         self.part_process.set_client(self.snap_client)
         self.part_process.start_heartbeat()
         self.part_process.start_process()
-        # self.proxy=HttpProxy()
-        # self.proxy.start_proxy()
         return True
     def stop_server(self) -> bool:
         """停止"""
@@ -418,6 +408,6 @@ class FlyingCommunication(BaseCommunication):
             self.part_process.stop_heartbeat()
             self.part_process.stop_process()
         self.snap_client.disconnect()  
-        if self.proxy:
-            self.proxy.stop_proxy()
+        # if self.proxy:
+        #     self.proxy.stop_proxy()
         return True

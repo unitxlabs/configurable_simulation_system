@@ -90,9 +90,7 @@ class Proxy(Thread):
 
 
 class PartProcessor(object):
-    def __init__(self, host_ip=SNAP7_HOST, host_port=SNAP7_PORT):
-        self.host_ip = host_ip
-        self.host_port = host_port
+    def __init__(self):
         self.client = None
         # sensor_last_timestamp_dict 传感器上一次的时间戳，用于校验传感器是否在正确的时间触发。
         self.sensor_last_timestamp_dict = {}
@@ -153,12 +151,13 @@ class PartProcessor(object):
             self.stop_event.wait(PLC_HEARTBEAT_POLLER_TIME)
             with self.client.locker:
                 heartbeat_val = self.client.read(addr=REGISTER_ADDR[PLC_HEARTBEAT]["addr"],
-                                                 length=REGISTER_ADDR[PLC_HEARTBEAT]["length"])
+                                                 length=REGISTER_ADDR[PLC_HEARTBEAT]["length"],
+                                                 datatype="int8")
             if heartbeat_val and not heartbeat_val[0]:
                 self.stop_event.wait(PLC_HEARTBEAT_WAIT_TIME)
                 with self.client.locker:
-                    self.client.write(addr=REGISTER_ADDR[PLC_HEARTBEAT]["addr"], val=1, datatype="int")
-                    self.client.write(addr=REGISTER_ADDR[PROD_HEARTBEAT]["addr"], val=self.prod_status, datatype="int")
+                    self.client.write(addr=REGISTER_ADDR[PLC_HEARTBEAT]["addr"], val=1, datatype="int8")
+                    self.client.write(addr=REGISTER_ADDR[PROD_HEARTBEAT]["addr"], val=self.prod_status, datatype="int8")
                 logger.debug("write plc heartbeat ok.")
 
     def prod_heartbeat(self):
@@ -248,7 +247,7 @@ class PartProcessor(object):
                     logger.debug(f"run_process write warring_dict")
                     with self.client.locker:
                         for k, v in self.warring_dict.items():
-                            self.client.write(addr=REGISTER_ADDR[PART_RESULT_MSG]['addr'], val=v, datatype="int")
+                            self.client.write(addr=REGISTER_ADDR[PART_RESULT_MSG]['addr'], val=v, datatype="int8")
                             self.client.write(addr=REGISTER_ADDR[PART_RESULT_SN]['addr'], val=str(k), datatype="str")
                         self.is_sensor_error = True
                 self.warring_dict.clear()
@@ -270,8 +269,8 @@ class PartProcessor(object):
         for item in self.part_dict.values():
             item["pause_time"][item["cur_sensor"]] += pause_time
         with self.client.locker:
-            self.client.write(addr=REGISTER_ADDR[PLC_START]["addr"], val="", datatype='str', length=4)
-            self.client.write(addr=REGISTER_ADDR[PLC_PAUSE]["addr"], val="", datatype='str', length=4)
+            self.client.write(addr=REGISTER_ADDR[PLC_START]["addr"], val=0, datatype='int8', length=1)
+            self.client.write(addr=REGISTER_ADDR[PLC_PAUSE]["addr"], val=0, datatype='int8', length=1)
         logger.info("plc_start over")
 
     def decode_signal(self, read_register_signal):
@@ -308,15 +307,15 @@ class PartProcessor(object):
         """初始化"""
         # 写给plc ack信号
         with self.client.locker:
-            self.client.write(addr=REGISTER_ADDR[PLC_RESET]["addr"], val=0, datatype='int')  # 清零
-            self.client.write(addr=REGISTER_ADDR[PLC_RESET_ACK]["addr"], val=1, datatype='int')
+            self.client.write(addr=REGISTER_ADDR[PLC_RESET]["addr"], val=0, datatype='int8',length=1)  # 清零
+            self.client.write(addr=REGISTER_ADDR[PLC_RESET_ACK]["addr"], val=1, datatype='int8',length=1)
         
         time.sleep(0.02)  # 防止PLC没读到再写一次
         with self.client.locker:
             agent = self.client.read(addr=REGISTER_ADDR[PLC_RESET]["addr"])[0]
             if not agent:
-                self.client.write(addr=REGISTER_ADDR[PLC_RESET]["addr"], val=0, datatype='int')  # 清零
-                self.client.write(addr=REGISTER_ADDR[PLC_RESET_ACK]["addr"], val=1, datatype='int')
+                self.client.write(addr=REGISTER_ADDR[PLC_RESET]["addr"], val=0, datatype='int8',length=1)  # 清零
+                self.client.write(addr=REGISTER_ADDR[PLC_RESET_ACK]["addr"], val=1, datatype='int8',length=1)
                 logger.info(f"(write_signal) R0 agent addr:{REGISTER_ADDR[PLC_RESET_ACK]['addr']}, val:1")
 
         self.last_register_values.clear()
