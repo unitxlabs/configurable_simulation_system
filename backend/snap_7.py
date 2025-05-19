@@ -287,8 +287,8 @@ class Snap7(CommunicationBase):
 
 
 if __name__ == "__main__":
-    # snap7_obj = Snap7(host="192.168.0.1", port=44818, rack=0, slot=1, callback=None)
-    # print(f"Snap7 connected: {snap7_obj.connect()}")
+    snap7_obj = Snap7(host="192.168.0.1", port=44818, rack=0, slot=1, callback=None)
+    print(f"Snap7 connected: {snap7_obj.connect()}")
     # repeat_list=[4, 3, 2, 1, 0, 0, 0, 0, 0, 0]
     # sequences_intervals=[5000, 3000, 2000, 2000, 0, 0, 0, 0, 0, 0]
     # start_offset_address=2700
@@ -299,26 +299,26 @@ if __name__ == "__main__":
     # for value in sequences_intervals:
     #     snap7_obj.write(address=f"1_{start_offset_address}", value=value, datatype='int32')
     #     start_offset_address+=4
-    from src.data.data_monitor import DataMonitor,create_benchmark_config
-    data_monitor_config=create_benchmark_config(
-        base_benchmark_config=None,
-        camera_resolution='5mp',
-        model_resolution='5mp',
-        share_memory_interval_time=30,
-        seq_interval_ms=235
-    )
-    bh = DataMonitor(data_monitor_config)
-    bh.create_workbook()
-    bh.get_system_data(start_time=time.time())
-    each_start_time = time.time()
-    benchmark_counter = 300
-    time_s = time.time() - each_start_time
-    fps = benchmark_counter * 30 / time_s
-    bh.create_report({
-        "total_part_count": benchmark_counter,
-        "total_use_time": time_s,
-        "fps": fps
-    })
+    # from src.data.data_monitor import DataMonitor,create_benchmark_config
+    # data_monitor_config=create_benchmark_config(
+    #     base_benchmark_config=None,
+    #     camera_resolution='5mp',
+    #     model_resolution='5mp',
+    #     share_memory_interval_time=30,
+    #     seq_interval_ms=235
+    # )
+    # bh = DataMonitor(data_monitor_config)
+    # bh.create_workbook()
+    # bh.get_system_data(start_time=time.time())
+    # each_start_time = time.time()
+    # benchmark_counter = 300
+    # time_s = time.time() - each_start_time
+    # fps = benchmark_counter * 30 / time_s
+    # bh.create_report({
+    #     "total_part_count": benchmark_counter,
+    #     "total_use_time": time_s,
+    #     "fps": fps
+    # })
     # print(f'Address:52018_0 write:{snap7_obj.write(address="1_4", value=1, datatype="uint8")}')
     # print(f'Address:52018_0 write:{snap7_obj.write(address="1_3", value=1, datatype="uint8")}')
     # print(f'Address:52018_0 write:{snap7_obj.write(address="1_2576", value=2, datatype="uint8")}')
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     # print(f'Address:52018_0 read:{snap7_obj.read(address="1_16", datatype="str")}')
     # print(f'Address:52018_0 read:{snap7_obj.read(address="1_272", datatype="str")}')
 
-    # print(f'Address:52018_0 read:{snap7_obj.read(address="52018_0", datatype="int")}')
+    print(f'Address:52018_0 read:{snap7_obj.read(address="1_10", datatype="int32")}')
     # print(
     #     f'Address:52018_0 wrote:{snap7_obj.write(address="52018_0", value=3, datatype="int")}'
     # )
@@ -358,4 +358,4 @@ if __name__ == "__main__":
     # print(
     #     f'Address:52018_264_1 wrote:{snap7_obj.write(address="52018_264_1", value=False, datatype="bool")}'
     # )
-    # print(f"Disconnect:{snap7_obj.disconnect()}")
+    print(f"Disconnect:{snap7_obj.disconnect()}")

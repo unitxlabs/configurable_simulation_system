@@ -112,8 +112,8 @@ class FixedCommunication(BaseCommunication):
             return None
             
         try:
-            #result=self.snap_client.read(address="1_2578",  datatype='int')
-            return 0
+            result=self.snap_client.read(address="1_10",  datatype='int32')
+            return result[0]
         except Exception as e:
             logging.error(f"获取结果失败: {e}")
             return None 

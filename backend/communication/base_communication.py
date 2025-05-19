@@ -1,5 +1,6 @@
 from typing import Dict,Optional
 import logging
+import time
 #from backend.modbus_tcp_client import ModbusTCP
 from backend.snap_7 import Snap7
 from backend.image_count_util import ImageCountUtil
@@ -20,6 +21,7 @@ class BaseCommunication:
             slot=config.get("plc_port", 1),
             callback=config.get("plc_port", None)
         )
+        self.part_num = 50
         self.result_id = 0
 
     async def start(self) -> bool:
@@ -41,6 +43,7 @@ class BaseCommunication:
                 return False
 
             self.is_running = True
+            self.start_time = time.time()
             return True
         except Exception as e:
             logging.error(f"启动失败: {e}")

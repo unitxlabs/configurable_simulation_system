@@ -65,12 +65,12 @@ def create_benchmark_config(base_benchmark_config: dict, camera_resolution: str,
         'model_width': model_width,
         'model_height': model_height,
         'model_resolution': model_resolution,
-        'network_architecture': 'v4',
+        'network_architecture': 'v6',
         'ng_type_number': 10,
         'each_ng_type_defect_number': 5,
-        'edge_name':'Test'
+        'edge_name':'us_edge'
     }
-    # result_benchmark_config.update(base_benchmark_config)
+    result_benchmark_config.update(base_benchmark_config)
     # result_benchmark_config.update(register_map_func(base_benchmark_config['register_first_twice']))
     result_benchmark_config['max_benchmark_time'] = max_benchmark_time
     result_benchmark_config['share_memory_interval_time'] = share_memory_interval_time
@@ -510,7 +510,7 @@ class DataMonitor(object):
             for cell in column:
                 try:
                     if len(str(cell.value)) > max_length:
-                        max_length = len(cell.value)
+                        max_length = len(str(cell.value))
                 except Exception as e:
                     logger.error(f"{inspect.currentframe().f_code.co_name} raise error: {e}")
             adjusted_width = (max_length + 2)
@@ -542,7 +542,28 @@ class DataMonitor(object):
 
 
 
-
+if __name__ == "__main__":
+    from src.data.data_monitor import DataMonitor,create_benchmark_config
+    data_monitor_config=create_benchmark_config(
+        base_benchmark_config=None,
+        camera_resolution='5mp',
+        model_resolution='5mp',
+        share_memory_interval_time=30,
+        seq_interval_ms=235
+    )
+    bh = DataMonitor(data_monitor_config)
+    bh.create_workbook()
+    start_time=time.time()- 1*3600
+    bh.get_system_data(start_time=start_time)
+    each_start_time = start_time
+    benchmark_counter = 300
+    time_s = time.time() - each_start_time
+    fps = benchmark_counter * 30 / time_s
+    bh.create_report({
+        "total_part_count": benchmark_counter,
+        "total_use_time": time_s,
+        "fps": fps
+    })
 
 
 

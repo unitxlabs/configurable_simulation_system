@@ -25,14 +25,12 @@ def background_task(c: BaseCommunication):
     communication_config = c.config.get("communication_config")
     print(communication_config)
     global task_running, task_status_code, task_result_id
-    start_time = time.time()
+    result=0
     c.run_server()
     while not stop_event.is_set():
         if not pause_event.is_set():
             print("Task is running...")
-            time.sleep(1)  # Simulate task running
-            elapsed_time = time.time() - start_time
-            if elapsed_time >= 30:  # After 30 seconds
+            if result>=c.part_num:  # After 30 seconds
                 print("Task is end...")
                 min_time = round(random.uniform(0.9, 1.0), 15)
                 max_time = round(random.uniform(1.0, 1.1), 15)
