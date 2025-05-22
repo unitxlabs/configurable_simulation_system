@@ -122,6 +122,7 @@ class FixedCommunication(BaseCommunication):
         return True
     def stop_server(self) -> bool:
         """停止"""
+        super().stop_server()
         self.snap_client.disconnect()
         return True
 def gen_step2_config(config):

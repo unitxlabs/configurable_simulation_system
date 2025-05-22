@@ -230,7 +230,8 @@ class DataMonitor(object):
     @staticmethod
     def get_gpu_info() -> str:
         gpus = GPUtil.getGPUs()
-        return str([f"GPU: {gpu.name} {gpu.memoryTotal}MB" for gpu in gpus])
+        #eturn str([f"GPU: {gpu.name} {gpu.memoryTotal}MB" for gpu in gpus])
+        return str([f"{gpu.name} {gpu.memoryTotal}MB" for gpu in gpus])
 
     @staticmethod
     def get_memory_info() -> str:
@@ -469,17 +470,15 @@ class DataMonitor(object):
             data_ws = self.wb["data"]
         else:
             data_ws = self.wb.create_sheet(title="data")
-
-        if data_ws.max_row == 1:
-            data_ws.append([
+        columns=[
                 # System Info
-                "Edge Name", "Camera Resolution", "Model Resize", "Network Architecture", "Software Version",
+                "ID","Edge Name", "Camera Resolution", "Model Resize", "Network Architecture", "Software Version",
                 "NG Type Number", 'Each NG Type Defect Number', "Is Image Saving",
 
                 # Benchmark Data
                 "Part Count", "Total Use Time(s)", "FPS", "MP/s", "Max Part Use Time (s)", "Min Part Use Time (s)",
                 "Avg Part Use Time (s)", "Max Cortex Infer Time (ms)", "Min Cortex Infer Time (ms)",
-                "Avg Cortex Infer Time (ms)",
+                "Avg Cortex Infer Time (ms)","Max Image Capture Time (ms)","Min Image Capture Time (ms)","Avg Image Capture Time (ms)",
 
                 # System Data
                 "CPU", "GPU", "RAM", "SSD", "CPU Usage AVG (%)", "GPU Usage AVG (%)", "GPU Memory Usage AVG (%)",
@@ -488,12 +487,15 @@ class DataMonitor(object):
 
                 # Core Allocation
                 "Core Allocation", "Created At"
-            ])
+            ]
+        if data_ws.max_row == 1:
+            data_ws.append(columns)
         prod_info, core_allocation = self.get_prod_info()
         mps = int(self.data_monitor_config['model_resolution'].split('mp')[0]) * benchmark_data['fps']
+        id = self.data_monitor_config['id']
         edge_name = self.data_monitor_config['edge_name']
-        data_ws.append([edge_name] + prod_info + list(benchmark_data.values()) + [mps] + self.calculate_part_time(
-            result_log) + self.calculate_cortex_infer_time(result_log) + self.get_system_info() +
+        data_row=([id]+[edge_name] + prod_info + list(benchmark_data.values()) + [mps] + self.calculate_part_time(
+            result_log) + self.calculate_cortex_infer_time(result_log)+ self.get_image_capture_time_cost(result_log) + self.get_system_info() +
                        [sum(self.cpu_usage) / len(self.cpu_usage),
                         sum(self.gpu_usage) / len(self.gpu_usage),
                         sum(self.gpu_mem_usage) / len(
@@ -504,6 +506,7 @@ class DataMonitor(object):
                             self.disk_read_speed),
                         sum(self.disk_write_speed) / len(
                             self.disk_write_speed)] + [core_allocation, end_time])
+        data_ws.append(data_row)
         for column in data_ws.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
@@ -520,32 +523,42 @@ class DataMonitor(object):
                               f'_{self.data_monitor_config["model_resolution"]}')[:31]
         if plt_worksheet_name in self.wb.sheetnames:
             del self.wb[plt_worksheet_name]
-        chart_ws = self.wb.create_sheet(title=plt_worksheet_name)
+        # chart_ws = self.wb.create_sheet(title=plt_worksheet_name)
 
-        self.plot_and_insert(self.cpu_usage, "CPU Usage (%)", "A1", chart_ws, self.all_params)
-        self.plot_and_insert(self.gpu_usage, "GPU Usage (%)", "R1", chart_ws, self.all_params)
-        self.plot_and_insert(self.gpu_mem_usage, "GPU Memory Usage (%)", "AI1", chart_ws, self.all_params)
-        self.plot_and_insert(self.memory_usage, "Memory Usage (%)", "A36", chart_ws, self.all_params)
-        self.plot_and_insert(self.disk_usage, "Disk Usage (%)", "R36", chart_ws, self.all_params)
-        self.plot_and_insert(self.disk_read_speed, "Disk Read Speed (MB/s)", "AI36", chart_ws, self.all_params)
-        self.plot_and_insert(self.disk_write_speed, "Disk Write Speed (MB/s)", "AZ36", chart_ws, self.all_params)
+        # self.plot_and_insert(self.cpu_usage, "CPU Usage (%)", "A1", chart_ws, self.all_params)
+        # self.plot_and_insert(self.gpu_usage, "GPU Usage (%)", "R1", chart_ws, self.all_params)
+        # self.plot_and_insert(self.gpu_mem_usage, "GPU Memory Usage (%)", "AI1", chart_ws, self.all_params)
+        # self.plot_and_insert(self.memory_usage, "Memory Usage (%)", "A36", chart_ws, self.all_params)
+        # self.plot_and_insert(self.disk_usage, "Disk Usage (%)", "R36", chart_ws, self.all_params)
+        # self.plot_and_insert(self.disk_read_speed, "Disk Read Speed (MB/s)", "AI36", chart_ws, self.all_params)
+        # self.plot_and_insert(self.disk_write_speed, "Disk Write Speed (MB/s)", "AZ36", chart_ws, self.all_params)
 
         if 'Sheet' in self.wb.sheetnames:
             del self.wb['Sheet']
 
         self.wb.save(self.REPORT_FILE_NAME)
         self.all_params.clear()
+        data_dict = dict(zip(columns, data_row))
+        return data_dict
 
-    def get_image_capture_time_cost(self):
-        pass
+    @staticmethod
+    def get_image_capture_time_cost(result_log) -> list:
         # !todo 获取Optix获取每张图片的耗时，然后统计平均耗时，并获取最大耗时
+        all_capturer_time = []
+        for line in result_log:
+            if 'Optix handle_image' in line:
+                all_capturer_time.append(int(line.split(' ')[-1]))
+
+        if not all_capturer_time:
+            return [0, 0, 0]
+        return [max(all_capturer_time), min(all_capturer_time), sum(all_capturer_time) / len(all_capturer_time)]
 
 
 
 if __name__ == "__main__":
     from src.data.data_monitor import DataMonitor,create_benchmark_config
     data_monitor_config=create_benchmark_config(
-        base_benchmark_config=None,
+        base_benchmark_config={"id":1},
         camera_resolution='5mp',
         model_resolution='5mp',
         share_memory_interval_time=30,

@@ -404,6 +404,7 @@ class FlyingCommunication(BaseCommunication):
         return True
     def stop_server(self) -> bool:
         """停止"""
+        super().stop_server()
         if self.part_process:
             self.part_process.stop_heartbeat()
             self.part_process.stop_process()

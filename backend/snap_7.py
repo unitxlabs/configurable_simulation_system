@@ -330,7 +330,7 @@ if __name__ == "__main__":
     # print(f'Address:52018_0 read:{snap7_obj.read(address="1_16", datatype="str")}')
     # print(f'Address:52018_0 read:{snap7_obj.read(address="1_272", datatype="str")}')
 
-    print(f'Address:52018_0 read:{snap7_obj.read(address="1_10", datatype="int32")}')
+    print(f'Address:52018_0 read:{snap7_obj.read(address="1_6", datatype="int32")}')
     # print(
     #     f'Address:52018_0 wrote:{snap7_obj.write(address="52018_0", value=3, datatype="int")}'
     # )

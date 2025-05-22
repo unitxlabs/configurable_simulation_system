@@ -88,7 +88,7 @@ class BaseCommunication:
             communication_step = communication_config.get("communication_step", 0)
             communication_type_request = [communication_type, communication_step]
 
-            part_type = communication_config.get("part_type", "物料")
+            part_type = communication_config.get("part_type", "EMT")
             part_interval = int(communication_config.get("part_interval", 0))
             part_start_to_ws1_interval = int(communication_config.get("part_start_to_ws1_interval", 0))
 
@@ -169,7 +169,7 @@ class BaseCommunication:
             # print(f'Address:2586 ws_next_interval:{self.snap_client.read(address="2586",length=6,datatype="int")}')
             # print(f'Address:2614 camera_reset_time:{self.snap_client.read(address="2614",length=6,datatype="int")}')
             log.debug(f"_write_plc_reset: {1}")
-            self.snap_client.write(address=f"1_4", value=1, datatype='int8')
+            self.snap_client.write(address=f"1_4_0", value=True, datatype='bool')
             return True
         except Exception as e:
             logging.error(f"写入配置失败: {e}")
@@ -182,9 +182,17 @@ class BaseCommunication:
     def get_result(self) -> Optional[Dict]:
         """获取结果"""
         raise NotImplementedError("子类必须实现此方法")
+    def resume_server(self) -> bool:
+        """继续"""
+        self.snap_client.write(address="1_4_1", value=False, datatype='bool')
+    
+    def pause_server(self) -> bool:
+        """暂停"""
+        self.snap_client.write(address="1_4_1", value=True, datatype='bool')
+    
     def run_server(self) -> bool:
         """启动"""
         raise NotImplementedError("子类必须实现此方法")
     def stop_server(self) -> bool:
         """停止"""
-        raise NotImplementedError("子类必须实现此方法")
+        self.snap_client.write(address="1_4_2", value=True, datatype='bool')
