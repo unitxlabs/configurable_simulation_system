@@ -546,8 +546,11 @@ class DataMonitor(object):
         # !todo 获取Optix获取每张图片的耗时，然后统计平均耗时，并获取最大耗时
         all_capturer_time = []
         for line in result_log:
-            if 'Optix handle_image' in line:
-                all_capturer_time.append(int(line.split(' ')[-1]))
+            if 'Optix handle_image' in line  and 'took' in line:
+                try:
+                    all_capturer_time.append(int(line.split(' ')[-1]))
+                except ValueError:
+                    print(f"跳过非数字结尾行: {line.strip()}")    
 
         if not all_capturer_time:
             return [0, 0, 0]
