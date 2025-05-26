@@ -113,6 +113,7 @@ class BaseCommunication:
                 ws_next_interval.append(int(workstation_config.get("to_next_ws_offset", 0)))
                 camera_reset_time.append(int(workstation_config.get("camera_reset_time", 0)))
                 controller_id = workstation_config_data.get("controller_config").get("controller_id")
+                print(controller_id)
                 repeat_list = ImageCountUtil.get_controller_pic_count_list(controller_id)
                 ws_seq_count.append(workstation_config.get("sequence_count", 0))
                 sequences_ids = workstation_config.get("sequences_id", [])
@@ -134,6 +135,8 @@ class BaseCommunication:
                 for value in sequences_intervals:
                     self.snap_client.write(address=f"1_{start_offset_address}", value=value, datatype='int32')
                     start_offset_address+=4
+                start_repeat_address+=80
+                start_offset_address+=80
 
             log.debug(f"2654 ws_seq_count:{ws_seq_count}")
             seq_addr=2654

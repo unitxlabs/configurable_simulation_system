@@ -39,7 +39,7 @@ def background_task(c: BaseCommunication):
                 c.resume_server()
             print("Task is running...")
             #if result>=c.part_num or task_status_code ==3:  # After 30 seconds
-            if result>=300:  # After 30 seconds
+            if result>=50:  # After 30 seconds
                 print("Task is end...")
                 from src.data.data_monitor import DataMonitor,create_benchmark_config
                 data_monitor_config=create_benchmark_config(
@@ -66,7 +66,6 @@ def background_task(c: BaseCommunication):
                 gpu=safe_list(data.get("GPU",["RTX-4070"]))
                 ram=data.get("RAM","")
                 ssd=safe_list(data.get("SSD",[]))
-                print(isinstance(gpu, list),isinstance(ssd, list),isinstance(ram, list))
                 soft_version=data.get("Software Version","4.9.6")
                 ipc_config_data_dict={
                     "name": "us_enterprise",
@@ -91,7 +90,7 @@ def background_task(c: BaseCommunication):
                     # part information
                     "detection_dimension": data.get("detection_dimension",0),
                     "part_type": communication_config.get("part_type","test"),
-                    "part_interval": 2.5,
+                    "part_interval": communication_config.get("part_interval",2000),
                     "total_image_count": 30,
                     "total_inference_count": 40,
                     "ng_type_count": data.get("NG Type Number",0),
@@ -111,9 +110,9 @@ def background_task(c: BaseCommunication):
                     "min_part_use_time": data.get("Min Part Use Time (s)",0),
                     "avg_part_use_time": data.get("Avg Part Use Time (s)",0),
 
-                    "max_image_capture_time": data.get("Max Image Capture Time",0),
-                    "min_image_capture_time": data.get("Min Image Capture Time",0),
-                    "avg_image_capture_time": data.get("Avg Image Capture Time",0),
+                    "max_image_capture_time": data.get("Max Image Capture Time (ms)",0),
+                    "min_image_capture_time": data.get("Min Image Capture Time (ms)",0),
+                    "avg_image_capture_time": data.get("Avg Image Capture Time (ms)",0),
 
                     "max_cortex_infer_time": data.get("Max Cortex Infer Time (ms)",0),
                     "min_cortex_infer_time": data.get("Min Cortex Infer Time (ms)",0),
@@ -124,6 +123,8 @@ def background_task(c: BaseCommunication):
                 new_data_id = db_instance.add_data(
                     table_name="simulation_result", data_dict=data_dict
                 )
+                print(data)
+                print(data_dict)
                 print(f"Task completed, result inserted with ID: {new_data_id}")
                 task_result_id = new_data_id
                 test_ipc_config_data_dict = {

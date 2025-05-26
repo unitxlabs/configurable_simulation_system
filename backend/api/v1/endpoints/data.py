@@ -18,20 +18,6 @@ def get_data_list(
     # model_count: Optional[int] = Query(None, description="模型数量"),
     each_ng_type_defect_count: Optional[int] = Query(None, description="缺陷数量"),
 ):
-    # todo 获取数据
-    print(
-        {
-            "search": search,
-            "cpu": cpu,
-            "gpu": gpu,
-            "camera_count": camera_count,
-            "camera_resolution": camera_resolution,
-            "total_image_count": total_image_count,
-            "total_inference_count": total_inference_count,
-            # "model_count": model_count,
-            "each_ng_type_defect_count": each_ng_type_defect_count,
-        }
-    )
     data_dict = {}
     if cpu:
         data_dict["cpu"] = cpu
@@ -53,7 +39,6 @@ def get_data_list(
     query_data = db_instance.query_data(
         table_name="simulation_result", data_dict=data_dict
     )
-    print(query_data)
     return CommonResponse(msg="", data=query_data)
 
 
@@ -70,3 +55,12 @@ def get_data_select():
         "gpu_select_options": gpu_select_options,
     }
     return CommonResponse(msg="获取成功", data=select_options)
+
+@dataRouter.get("/delete", response_model=CommonResponse)
+def delete_data(id: Optional[int] = Query(None, description="数据ID"),):
+    if not id:
+        raise HTTPException(status_code=503, detail="无效的参数")
+    db_instance.delete_data(
+        table_name="simulation_result", data_id=id
+    )
+    return CommonResponse(msg="删除成功", data=None)
