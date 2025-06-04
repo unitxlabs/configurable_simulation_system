@@ -39,7 +39,7 @@ def background_task(c: BaseCommunication):
                 c.resume_server()
             print("Task is running...")
             #if result>=c.part_num or task_status_code ==3:  # After 30 seconds
-            if result>=50:  # After 30 seconds
+            if result>=5000:  # After 30 seconds
                 print("Task is end...")
                 from src.data.data_monitor import DataMonitor,create_benchmark_config
                 data_monitor_config=create_benchmark_config(

@@ -45,7 +45,7 @@
     <el-dialog v-model="isEditDialogVisible" title="编辑设置" @close="resetEditData" align-center>
       <el-form :model="editForm" ref="editFormRef" label-position="left" label-width="auto">
         <el-form-item v-for="(field, index) in inputFields" :key="index" :label="field.label" v-show="!field.ignore">
-          <el-select v-model="field.val" style="width: 240px" v-if="field.source">
+          <el-select v-model="editForm[field.model]" style="width: 240px" v-if="field.source">
             <el-option v-for="item in field.source" :key="item.val" :label="item.label" :value="item.val" />
           </el-select>
           <el-input v-else v-model="editForm[field.model]" :placeholder="`请输入${field.label}`" />

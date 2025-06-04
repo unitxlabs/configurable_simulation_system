@@ -26,6 +26,9 @@ importers:
       mockjs:
         specifier: ^1.1.0
         version: 1.1.0
+      pnpm:
+        specifier: ^10.7.1
+        version: 10.7.1
       vue:
         specifier: ^3.5.13
         version: 3.5.13(typescript@5.6.3)
@@ -2280,6 +2283,11 @@ packages:
   pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
+
+  pnpm@10.7.1:
+    resolution: {integrity: sha512-LZLIa3ko3IKE9TSU+0IB+YPaZfD7Tw1Auq+lz2KPox2uPllo8SRm8X336XMQ4w80OmSLrqG5s1BoXa+v/99YCA==}
+    engines: {node: '>=18.12'}
+    hasBin: true
 
   postcss-selector-parser@6.1.2:
     resolution: {integrity: sha512-Q8qQfPiZ+THO/3ZrOrO0cJJKfpYCagtMUkXbnEfmgUjwXg6z/WBeOyS9APBBPCTSiDV+s4SwQGu8yFsiMRIudg==}
@@ -5309,6 +5317,8 @@ snapshots:
       pathe: 1.1.2
 
   pluralize@8.0.0: {}
+
+  pnpm@10.7.1: {}
 
   postcss-selector-parser@6.1.2:
     dependencies:

@@ -25,14 +25,14 @@ const activeTab = ref('savedConfig');
 const inputFields = ref([
   { label: '设置名', model: 'name', val: '', ignore: true },
   { label: '物料类型', model: 'part_type', val: '' },
-  { label: '设物料时间间隔(s)', model: 'part_interval', val: '' },
-  { label: 'part start到第一个工位的时间间隔(s)', model: 'part_start_to_ws1_interval', val: '' },
+  { label: '设物料时间间隔(ms)', model: 'part_interval', val: '' },
+  { label: 'part start到第一个工位的时间间隔(ms)', model: 'part_start_to_ws1_interval', val: '' },
   { label: '握手步数', model: 'communication_step', val: 2, source: [{ label: "2步", val: 2 }, { label: "4步", val: 4 }] },
 ]);
 
 const savedSearchConditions = ref([
   { placeholder: '按关键字搜索', model: 'keyword' },
-  { placeholder: '物料间隔搜索', model: 'materials_interval' },
+  { placeholder: '物料间隔搜索', model: 'part_interval' },
 ]);
 
 const tableColumnsForConfig = ref([
@@ -58,7 +58,7 @@ const fetchSaveWorkStationList = async () => {
       ...item,
       isActive: true
     }));
-    fetchSaveCommunicationList('?communication_type=0');
+    fetchSaveCommunicationList('?communication_type=2');
   } catch (error) {
     ElMessage.error("获取数据失败:" + error.response.data.detail);
   }
@@ -69,7 +69,7 @@ const handleSaveSetting = (inputData, settingsData) => {
     name: inputData.name,
     part_type: inputData.part_type,
     part_interval: inputData.part_interval,
-    communication_type: 0,
+    communication_type: 2,
     communication_step: inputData.communication_step,
     part_start_to_ws1_interval: inputData.part_start_to_ws1_interval
   };
@@ -93,7 +93,7 @@ const handleSaveSetting = (inputData, settingsData) => {
     })
     .catch(error => {
       ElMessage.error('保存失败');
-      ElMessage.error('保存失败:', error);
+      console.error('保存失败:', error.response.data.detail);
     });
 }
 
@@ -131,7 +131,7 @@ const fetchSaveCommunicationList = async (query) => {
 const handleSearchSettings = (searchData) => {
   const queryData = {
     ...searchData,
-    communication_type: 0,
+    communication_type: 2,
   }
   fetchSaveCommunicationList(toQueryString(queryData))
 }
@@ -142,7 +142,7 @@ const handleEditSetting = (setting) => {
     name: setting.name,
     part_type: setting.part_type,
     part_interval: setting.part_interval,
-    communication_type: 0,
+    communication_type: 2,
     communication_step: setting.communication_step,
     part_start_to_ws1_interval: setting.part_start_to_ws1_interval
   };
@@ -153,8 +153,6 @@ const handleEditSetting = (setting) => {
     workstation_config_ids: setting.configurations.map(item => item.workstation_config.id),
     workstations_in_use: setting.configurations.map(item => item.isActive)
   };
-
-
   const mergedData = {
     ...transformedInputData,
     ...transformedSettingsData
@@ -168,7 +166,7 @@ const handleEditSetting = (setting) => {
     })
     .catch(error => {
       ElMessage.error('保存失败');
-      ElMessage.error('保存失败:', error);
+      console.error('保存失败:', error);
     });
 }
 const handleApplySetting = (setting) => {
@@ -177,7 +175,7 @@ const handleApplySetting = (setting) => {
     name: setting.name,
     part_type: setting.part_type,
     part_interval: setting.part_interval,
-    communication_type: 0,
+    communication_type: 2,
     communication_step: setting.communication_step,
     part_start_to_ws1_interval: setting.part_start_to_ws1_interval
   };
@@ -213,7 +211,7 @@ const handleApplyNewSetting = (inputData, settingsData) => {
     name: inputData.name,
     part_type: inputData.part_type,
     part_interval: inputData.part_interval,
-    communication_type: 0,
+    communication_type: 2,
     communication_step: inputData.communication_step,
     part_start_to_ws1_interval: inputData.part_start_to_ws1_interval
   };
@@ -241,7 +239,7 @@ const deleteCommunicationData = async (query) => {
 };
 const handleDeleteSetting = (setting) => {
   if (setting.id != '') {
-    deleteCommunicationData(`?id=${setting.id}&communication_type=0`)
+    deleteCommunicationData(`?id=${setting.id}&communication_type=2`)
     fetchSaveWorkStationList()
   }
 }

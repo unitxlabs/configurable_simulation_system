@@ -5,7 +5,7 @@
         </el-card>
 
         <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑' : '新增'">
-            <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
+            <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
                 <el-form-item label="工位ID" prop="workstation_id">
                     <el-input v-model.number="form.workstation_id" type="number" />
                 </el-form-item>
@@ -25,7 +25,7 @@
                 <el-form-item label="相机复位时间">
                     <el-input v-model="form.camera_reset_time" type="number" />
                 </el-form-item>
-                <el-form-item label="Sequences ID">
+                <el-form-item label="Sequences Repeat">
                     <el-input v-model="sequences_id_input" placeholder="用逗号分隔" />
                 </el-form-item>
                 <el-form-item label="Sequences 之间的间隔">
@@ -125,8 +125,8 @@ const fetchCameraSelectAllData = async () => {
     }
 };
 const handleDelete = async (setting) => {
-    if (setting.id && setting.workstation_id) {
-        await deleteWorkStationSettingData(`?id=${setting.id}&workstation_id=${setting.workstation_id}`);
+    if (setting.workstation_config.id && setting.workstation_config.workstation_id) {
+        await deleteWorkStationSettingData(`?id=${setting.workstation_config.id}&workstation_id=${setting.workstation_config.workstation_id}`);
         fetchWorkStationData('');
     }
 };

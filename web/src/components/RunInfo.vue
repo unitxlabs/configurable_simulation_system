@@ -18,7 +18,7 @@
 
                 <el-main>
                     <el-table :data="tableData" border style="width: 100%">
-                        <el-table-column prop="item" label="数据项目"></el-table-column>
+                        <el-table-column prop="item" label="数据名称"></el-table-column>
                         <el-table-column prop="value" label="值"></el-table-column>
                     </el-table>
                 </el-main>
@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from "vue";
+import { ref, onMounted, nextTick, computed,onUnmounted } from "vue";
 import * as echarts from "echarts";
 import { fetchRunInfo, runTask, getTaskStatus, taskPause, taskResume, taskStop, getTaskResult } from "~/api/data";
 import * as XLSX from "xlsx";
@@ -54,9 +54,11 @@ const fetchStatus = async () => {
         taskStatus.value = response.status_code;
         if (taskStatus.value == 0 || taskStatus.value == 3 || taskStatus.value == 4) {
             stopDataFetching()
+        }else{
+             startDataFetching()
         }
     } catch (error) {
-        ElMessage.error("Error fetching status:", error);
+        ElMessage.error("Error fetching status:"+error.response.data.detail);
     }
 };
 
@@ -67,7 +69,7 @@ const run = async () => {
         taskStatus.value = response.status_code;
         startDataFetching();
     } catch (error) {
-        ElMessage.error("Error starting task:", error);
+        ElMessage.error("Error starting task:"+ error.response.data.detail);
     }
 };
 
@@ -78,7 +80,7 @@ const togglePause = async () => {
             taskStatus.value = response.status_code;
             stopDataFetching();
         } catch (error) {
-            ElMessage.error("Error pausing task:", error);
+            ElMessage.error("Error pausing task:"+ error.response.data.detail);
         }
     } else if (taskStatus.value === 2) {
         try {
@@ -86,7 +88,7 @@ const togglePause = async () => {
             taskStatus.value = response.status_code;
             startDataFetching();
         } catch (error) {
-            ElMessage.error("Error resuming task:", error);
+            ElMessage.error("Error resuming task:"+error.response.data.detail);
         }
     }
 };
@@ -98,7 +100,7 @@ const stop = async () => {
         taskStatus.value = response.status_code;
         stopDataFetching();
     } catch (error) {
-        ElMessage.error("Error stopping task:", error);
+        ElMessage.error("Error stopping task:"+ error.response.data.detail);
     }
 };
 
@@ -110,14 +112,48 @@ const exportData = async () => {
         if (!result || !result.simulation_result) {
             return ElMessage.info("暂无结果可导出");
         }
-        const headers = ["ID", "名称", "CPU", "GPU"];
-        const data = {
-            id: result.simulation_result.id,
-            name: result.ipc_performances.map(item => item.ipc_config.name).join(", "),
-            cpu: result.ipc_performances.map(item => item.ipc_config.cpu).join(", "),
-            gpu: result.ipc_performances.map(item => item.ipc_config.gpus.join(", ")).join(", ")
-        }
-        const sheetData = [headers, ...data];
+        // const headers = ["ID", "名称", "CPU", "GPU","物料图片数量","物料图片推理次数","控制器版本","FramesPerSecond","MegapixelsperSecond","AvgPartUseTime","AvgImageCaptureTime","AvgCortexInferTime"
+        //     ,"DetectionDimension","PartType","PartInterval","NgTypeCount","EachNgTypeDefectCount","IpcCount"
+        //     ,"IsImageSaving","PartCount","TotalTimeUsed","MaxPartUseTime","MinPartUseTime","Max_Image_Capture_Time","Min_Image_Capture_Time"
+        //     ,"MaxCortexInferTime","MinCortexInferTime","CoreAllocation"
+        // ];
+        const headers = ["ID", "名称", "CPU", "GPU","控制器版本","FramesPerSecond","MegapixelsperSecond","AvgPartUseTime","AvgImageCaptureTime","AvgCortexInferTime"
+            ,"DetectionDimension","PartType","PartInterval","NgTypeCount","EachNgTypeDefectCount","IpcCount"
+            ,"IsImageSaving","PartCount","TotalTimeUsed","MaxPartUseTime","MinPartUseTime","Max_Image_Capture_Time","Min_Image_Capture_Time"
+            ,"MaxCortexInferTime","MinCortexInferTime","CoreAllocation"
+        ];
+        const data = [
+            result.simulation_result.id,
+            result.ipc_performances.map(item => item.ipc_config.name).join(", "),
+            result.ipc_performances.map(item => item.ipc_config.cpu).join(", "),
+            result.ipc_performances.map(item => item.ipc_config.gpus.join(", ")).join(", "),
+            //result.simulation_result.total_image_count,
+            //result.simulation_result.total_inference_count,
+            "V6",
+            result.simulation_result.fps,
+            result.simulation_result.mps,
+            result.simulation_result.avg_part_use_time,
+            result.simulation_result.avg_image_capture_time,
+            result.simulation_result.avg_cortex_infer_time,
+            result.simulation_result.detection_dimension,
+            result.simulation_result.part_type,
+            result.simulation_result.part_interval,
+            result.simulation_result.ng_type_count,
+            result.simulation_result.each_ng_type_defect_count,
+            result.simulation_result.ipc_count,
+            result.simulation_result.is_image_saving,
+            result.simulation_result.part_count,
+            result.simulation_result.total_time_used,
+            result.simulation_result.max_part_use_time,
+            result.simulation_result.min_part_use_time,
+            result.simulation_result.max_image_capture_time,
+            result.simulation_result.min_image_capture_time,
+            result.simulation_result.max_cortex_infer_time,
+            result.simulation_result.min_cortex_infer_time,
+            result.simulation_result.core_allocation
+        ]
+
+        const sheetData = [headers, data];
         console.log(sheetData)
 
         const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
@@ -126,7 +162,7 @@ const exportData = async () => {
 
         XLSX.writeFile(workbook, "data.xlsx");
     } catch (error) {
-        ElMessage.error("Error get result task:", error);
+        ElMessage.error("Error get result task:"+ error.response.data.detail);
     }
 
 }
@@ -245,6 +281,7 @@ const updateChartsData = async () => {
 };
 
 const startDataFetching = () => {
+    console.log(taskStatus.value,intervalId,taskIntervalId)
     if ((taskStatus.value === 1 || taskStatus.value === 2) && !intervalId && !taskIntervalId) {
         intervalId = setInterval(updateChartsData, 2000);
         taskIntervalId = setInterval(fetchStatus, 2000);
@@ -267,6 +304,9 @@ onMounted(() => {
     nextTick(() => {
         initCharts();
     });
+});
+onUnmounted(() => {
+    stopDataFetching()
 });
 </script>
 

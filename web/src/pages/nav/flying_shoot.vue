@@ -25,8 +25,8 @@ const activeTab = ref('savedConfig');
 const inputFields = ref([
   { label: '设置名', model: 'name', val: '', ignore: true },
   { label: '物料类型', model: 'part_type', val: '' },
-  { label: '设物料时间间隔(s)', model: 'part_interval', val: '' },
-  { label: 'part start到第一个工位的时间间隔(s)', model: 'part_start_to_ws1_interval', val: '' },
+  { label: '设物料时间间隔(ms)', model: 'part_interval', val: '' },
+  { label: 'part start到第一个工位的时间间隔(ms)', model: 'part_start_to_ws1_interval', val: '' },
 ]);
 const savedSearchConditions = ref([
   { placeholder: '按关键字搜索', model: 'part_type' },
@@ -90,7 +90,7 @@ const handleSaveSetting = (inputData, settingsData) => {
     })
     .catch(error => {
       ElMessage.error('保存失败');
-      ElMessage.error('保存失败:', error);
+      console.error('保存失败:', error);
     });
 }
 
@@ -164,7 +164,7 @@ const handleEditSetting = (setting) => {
     })
     .catch(error => {
       ElMessage.error('保存失败');
-      ElMessage.error('保存失败:', error);
+      console.error('保存失败:', error);
     });
 }
 const handleApplySetting = (setting) => {

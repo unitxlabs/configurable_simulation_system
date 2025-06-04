@@ -71,10 +71,18 @@
     <el-card style="margin-top: 20px; flex: 1;">
       <el-table ref="tableRef" :data="tableData" border style="width: 100%;" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55"></el-table-column> <!-- 选择列 -->
-        <el-table-column prop="id" label="ID" width="100" :formatter="formatID"></el-table-column>
-        <el-table-column prop="name" label="名称" width="200" :formatter="formatName"></el-table-column>
+        <el-table-column prop="id" label="ID" width="80" :formatter="formatID"></el-table-column>
+        <el-table-column prop="name" label="名称" width="120" :formatter="formatName"></el-table-column>
+        <el-table-column prop="material_image_count" label="物料图片数量" :formatter="formatMIC"></el-table-column>
+        <el-table-column prop="material_inference_times" label="物料图片推理次数" :formatter="formatMIT"></el-table-column>
+        <el-table-column prop="controller_version" label="控制器版本" :formatter="formatCV"></el-table-column>
+        <el-table-column prop="fps" label="FramesPerSecond" :formatter="formatFps"></el-table-column>
+        <el-table-column prop="mps" label="MegapixelsPerSecond" :formatter="formatMps"></el-table-column>
+        <el-table-column prop="avg_part_use_time" label="AvgPartUseTime" :formatter="formatAvgPartUseTime"></el-table-column>
+        <el-table-column prop="avg_image_capture_time" label="AvgImageCaptureTime" :formatter="formatAvgImageCaptureTime"></el-table-column>
+        <el-table-column prop="avg_cortex_infer_time" label="AvgCortexInferTime" :formatter="formatAvgCortexInferTime"></el-table-column>
         <el-table-column prop="cpu" label="CPU" :formatter="formatCPU"></el-table-column>
-        <el-table-column prop="gpu" label="GPU" :formatter="formatGPU"></el-table-column>
+        <el-table-column prop="gpu" label="GPU" :formatter="formatGPU"></el-table-column> 
       </el-table>
     </el-card>
   </el-container>
@@ -100,14 +108,15 @@ const defaultFields = [
 ];
 const fieldOptions = [
   { key: 'camera_count', label: '相机个数' },
-  { key: 'camera_resolution', label: '相机分辨率' },
-  { key: 'material_image_count', label: '物料图片数量' },
-  { key: 'material_inference_times', label: '物料图片推理次数' },
-  { key: 'model_count', label: '模型数量' },
-  { key: 'defect_count', label: '缺陷数量' },
+  // { key: 'camera_resolution', label: '相机分辨率' },
+  //{ key: 'total_image_count', label: '物料图片数量' },
+  //{ key: 'total_inference_count', label: '物料图片推理次数' },
+  // { key: 'model_count', label: '模型数量' },
+  { key: 'each_ng_type_defect_count', label: '缺陷数量' },
   { key: 'part_interval', label: '物料间隔' },
-  { key: 'cameras_type', label: '相机型号' },
-  { key: 'controller_version', label: '控制器版本' }
+  { key: 'cameras_type', label: '相机型号' }
+  // ,
+  // { key: 'controller_version', label: '控制器版本' }
 ];
 
 const dynamicFields = ref([]);
@@ -155,8 +164,6 @@ const generateQueryParams = () => {
 const searchData = async () => {
   const queryString = generateQueryParams();
   console.log("查询数据 GET 请求参数:", queryString);
-  ElMessage.success("查询成功！参数：" + queryString);
-
   try {
     const data = await fetchData(queryString);
     tableData.value = data.data
@@ -187,7 +194,31 @@ const exportData = async () => {
       id: row.simulation_result.id,
       name: row.ipc_performances.map(item => item.ipc_config.name).join(", "),
       cpu: row.ipc_performances.map(item => item.ipc_config.cpu).join(", "),
-      gpu: row.ipc_performances.map(item => item.ipc_config.gpus.join(", ")).join(", ")
+      gpu: row.ipc_performances.map(item => item.ipc_config.gpus.join(", ")).join(", "),
+      //物料图片数量: row.simulation_result.total_image_count,
+      //物料图片推理次数: row.simulation_result.total_inference_count,
+      控制器版本: "V6",
+      FramesPerSecond: row.simulation_result.fps,
+      MegapixelsperSecond: row.simulation_result.mps,
+      AvgPartUseTime: row.simulation_result.avg_part_use_time,
+      AvgImageCaptureTime: row.simulation_result.avg_image_capture_time,
+      AvgCortexInferTime: row.simulation_result.avg_cortex_infer_time,
+      DetectionDimension: row.simulation_result.detection_dimension,
+      PartType: row.simulation_result.part_type,
+      PartInterval: row.simulation_result.part_interval,
+      NgTypeCount: row.simulation_result.ng_type_count,
+      EachNgTypeDefectCount: row.simulation_result.each_ng_type_defect_count,
+      IpcCount: row.simulation_result.ipc_count,
+      IsImageSaving: row.simulation_result.is_image_saving,
+      PartCount: row.simulation_result.part_count,
+      TotalTimeUsed: row.simulation_result.total_time_used,
+      MaxPartUseTime: row.simulation_result.max_part_use_time,
+      MinPartUseTime: row.simulation_result.min_part_use_time,
+      Max_Image_Capture_Time: row.simulation_result.max_image_capture_time,
+      Min_Image_Capture_Time: row.simulation_result.min_image_capture_time,
+      MaxCortexInferTime: row.simulation_result.max_cortex_infer_time,
+      MinCortexInferTime: row.simulation_result.min_cortex_infer_time,
+      CoreAllocation: row.simulation_result.core_allocation
     };
   });
 
@@ -197,9 +228,10 @@ const exportData = async () => {
 
   const columns = tableRef.value.columns.filter(col => col.type !== "selection");
 
-  const headers = columns.map(col => col.label);
-  const data = selectedRows.value.map(row => columns.map(col => col.formatter ? col.formatter(row, null, row[col.property], col) : row[col.property]));
-
+  // const headers = columns.map(col => col.label);
+  // const data = selectedRows.value.map(row => columns.map(col => col.formatter ? col.formatter(row, null, row[col.property], col) : row[col.property]));
+  const headers = Object.keys(exportParams[0]); // 获取字段名数组
+  const data = exportParams.map(record => headers.map(key => record[key]));
   const sheetData = [headers, ...data];
   console.log(sheetData)
 
@@ -236,6 +268,32 @@ const formatName = (row) => {
 const formatID = (row) => {
   return row.simulation_result.id;
 };
+
+const formatMIC = (row) => {
+  return row.simulation_result.total_image_count;
+};
+const formatMIT = (row) => {
+  return row.simulation_result.total_inference_count;
+};
+const formatCV = (row) => {
+  return "V6";
+};
+const formatFps = (row) => {
+  return row.simulation_result.fps;
+};
+const formatMps = (row) => {
+  return row.simulation_result.mps;
+};
+const formatAvgPartUseTime = (row) => {
+  return row.simulation_result.avg_part_use_time;
+};
+const formatAvgImageCaptureTime = (row) => {
+  return row.simulation_result.avg_image_capture_time;
+};
+const formatAvgCortexInferTime = (row) => {
+  return row.simulation_result.avg_cortex_infer_time;
+};
+
 </script>
 
 <style scoped>

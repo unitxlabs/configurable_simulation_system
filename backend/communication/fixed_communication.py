@@ -12,16 +12,14 @@ def transform_data(data,ack):
     workstation_configs = data["workstation_configs"]
     # 生成转换后的数据
     result = []
-    address = 2636  # 初始化地址
-    if ack:
-        address = 2642
-    ack_address = 2648
-    part_id_address = 528
     for i, ws_config in enumerate(workstation_configs):
+
         if workstations_in_use[i]:
             workstation_id = ws_config["workstation_config"]["workstation_id"]
             controller_config = ws_config["controller_config"]
-
+            if workstation_id==0:
+                print(f"workstation_config is invalid workstation_id = {workstation_id}")
+                continue
             # 生成name字段
             name = f"{c_name}_{workstation_id}"
 
@@ -32,10 +30,14 @@ def transform_data(data,ack):
                 camera.append(
                     {"camera_id": camera_id, "controller_port_id": controller_port_id}
                 )
-            current_address = address
-            address += 1  # signal的address使用current_address，然后address加2
-            current_ack_address = ack_address
-            ack_address += 1
+            address = 2636  # 初始化地址
+            if ack:
+                address = 2642
+            ack_address = 2648
+            part_id_address = 528
+            current_address = address+workstation_id-1
+            current_ack_address = ack_address+workstation_id-1
+            current_part_id_address=part_id_address+(workstation_id-1)*256
             print(ack)
             if ack:
                 station_done = {
@@ -58,7 +60,7 @@ def transform_data(data,ack):
                             }
                     },
                     "part_id": {
-                        "request": {"address": f"1_{part_id_address}", "length": "254"}
+                        "request": {"address": f"1_{current_part_id_address}", "length": "254"}
                     },
                 }                
             else:
@@ -72,10 +74,9 @@ def transform_data(data,ack):
                         },
                     },
                     "part_id": {
-                        "request": {"address": f"1_{part_id_address}", "length": "254","datatype": "str"}
+                        "request": {"address": f"1_{current_part_id_address}", "length": "254","datatype": "str"}
                     },
                 }
-            part_id_address += 256  # part_id的address
 
             result.append(
                 {"name": name, "camera": camera, "station_done": station_done}
