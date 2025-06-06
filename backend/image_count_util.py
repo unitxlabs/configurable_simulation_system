@@ -49,3 +49,13 @@ class ImageCountUtil:
         if len(repeat_list) < 10:
             repeat_list.extend([0] * (10 - len(repeat_list)))
         return repeat_list
+    @staticmethod
+    def get_total_pic_count():
+        imaging_config = load_config(config_path)
+        total_count = 0
+        for config in imaging_config:
+            for part in config.get("part_config", []):
+                sequences = part.get("sequences", [])
+                for seq in sequences:
+                    total_count+=seq.get("repeat", 0)
+        return total_count

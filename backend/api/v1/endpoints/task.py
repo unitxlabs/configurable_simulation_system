@@ -10,6 +10,7 @@ from backend.communication.flying_communication import FlyingCommunication
 from backend.communication.flying_poller import PartProcessor
 import asyncio
 import ast
+from backend.image_count_util import ImageCountUtil
 runRouter = APIRouter()
 # Task management
 task_thread = None
@@ -32,6 +33,7 @@ def background_task(c: BaseCommunication):
     print(communication_config)
     global task_running, task_status_code, task_result_id,task_hand_paused
     result=0
+    normal=False
     c.run_server()
     while not stop_event.is_set():
         if not pause_event.is_set():
@@ -39,8 +41,13 @@ def background_task(c: BaseCommunication):
                 c.resume_server()
             print("Task is running...")
             #if result>=c.part_num or task_status_code ==3:  # After 30 seconds
-            if result>=5000:  # After 30 seconds
+            if result>=300:  # After 30 seconds
+                c.stop_server()
+                normal=True
                 print("Task is end...")
+                total_count=ImageCountUtil.get_total_pic_count()
+                print("total count...",total_count)
+                print(c.start_time)
                 from src.data.data_monitor import DataMonitor,create_benchmark_config
                 data_monitor_config=create_benchmark_config(
                     base_benchmark_config={"id":c.start_time},
@@ -51,12 +58,13 @@ def background_task(c: BaseCommunication):
                 )
                 bh = DataMonitor(data_monitor_config)
                 bh.create_workbook()
-                start_time=c.start_time+60
+                start_time=c.start_time
                 bh.get_system_data(start_time=start_time)
-                each_start_time = start_time
+                each_start_time = c.start_time
                 benchmark_counter = result
                 time_s = time.time() - each_start_time
-                fps = benchmark_counter * 30 / time_s
+                print(start_time,each_start_time,time_s)
+                fps = benchmark_counter * total_count / time_s
                 data=bh.create_report({
                     "total_part_count": benchmark_counter,
                     "total_use_time": time_s,
@@ -148,14 +156,19 @@ def background_task(c: BaseCommunication):
             else:
                 print("Task is running...")
                 result=c.get_result()
+                if result==1:
+                    current_time=time.time()
+                    c.start_time=current_time-(communication_config.get("part_interval",1000)/ 1000)
+                    print(c.start_time)
                 print(result)
-                time.sleep(1)  # Simulate task running
+                time.sleep(0.1)  # Simulate task running
         else:
             task_status_code = 2  # Task is paused
             c.pause_server()
             print("Task is paused...")
-            time.sleep(1)
-    c.stop_server()
+            time.sleep(0.1)
+    if not normal:
+        c.stop_server()
     task_running = False
     task_hand_paused = False
     task_status_code = 3  # Task stopped
