@@ -141,10 +141,18 @@ import psutil
 import time
 import random
 from datetime import datetime
+import pynvml
+pynvml.nvmlInit()
 
-
+handle = pynvml.nvmlDeviceGetHandleByIndex(0)  # 第一个 GPU
+name = pynvml.nvmlDeviceGetName(handle)
 # 模拟实时获取数据
 def get_system_data():
+    utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
+    #meminfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
+
+    #print(f"[GPU 0 - {name}] 使用率: {utilization.gpu}% | 显存: {meminfo.used / 1024**2:.1f}MB / {meminfo.total / 1024**2:.1f}MB")
+    gpu_data = [utilization.gpu]
     # 获取 CPU 使用率
     cpu_data = [psutil.cpu_percent(interval=1)]  # 实时获取 CPU 使用率
 
@@ -164,6 +172,7 @@ def get_system_data():
     return {
         "cpuData": cpu_data,
         "diskData": disk_data,
+        "gpuData": gpu_data,
         "memoryData": memory_data,
         "timeData": time_data,
     }

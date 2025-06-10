@@ -41,7 +41,7 @@ def background_task(c: BaseCommunication):
                 c.resume_server()
             print("Task is running...")
             #if result>=c.part_num or task_status_code ==3:  # After 30 seconds
-            if result>=300:  # After 30 seconds
+            if result>=178:  # After 30 seconds
                 c.stop_server()
                 normal=True
                 print("Task is end...")
@@ -160,6 +160,9 @@ def background_task(c: BaseCommunication):
                     current_time=time.time()
                     c.start_time=current_time-(communication_config.get("part_interval",1000)/ 1000)
                     print(c.start_time)
+                current_time=time.time()
+                if result>0:
+                    print("间隔:",(current_time-c.start_time)/result)
                 print(result)
                 time.sleep(0.1)  # Simulate task running
         else:
