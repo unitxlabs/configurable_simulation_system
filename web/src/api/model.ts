@@ -165,6 +165,7 @@ interface CommunicationUpdateSettingsData {
 interface FetchRunInfoResponse {
   cpuData: number[];
   diskData: number[];
+  gpuData: number[];
   memoryData: { name: string; value: number }[];
   timeData: string[];
 }

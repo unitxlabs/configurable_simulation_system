@@ -16,19 +16,19 @@
                             :value="item.value" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="到下一工位时间">
+                <el-form-item label="到下一工位时间(ms)">
                     <el-input v-model="form.to_next_ws_offset" type="number" />
                 </el-form-item>
                 <el-form-item label="Sequence 数量">
                     <el-input v-model="form.sequence_count" type="number" />
                 </el-form-item>
-                <el-form-item label="相机复位时间">
+                <el-form-item label="相机复位时间(ms)">
                     <el-input v-model="form.camera_reset_time" type="number" />
                 </el-form-item>
                 <el-form-item label="Sequences Repeat">
                     <el-input v-model="sequences_id_input" placeholder="用逗号分隔" />
                 </el-form-item>
-                <el-form-item label="Sequences 之间的间隔">
+                <el-form-item label="Sequences 之间的间隔(ms)">
                     <el-input v-model="sequences_interval_input" placeholder="用逗号分隔" />
                 </el-form-item>
             </el-form>
@@ -41,20 +41,20 @@
         <el-card style="margin-top: 20px; flex: 1;">
             <el-table :data="tableData" border style="width: 100%">
                 <el-table-column prop="workstation_config.workstation_id" label="工位ID" width="80" />
-                <el-table-column prop="workstation_config.to_next_ws_offset" label="到下一工位时间" />
+                <el-table-column prop="workstation_config.to_next_ws_offset" label="到下一工位时间(ms)" />
                 <el-table-column prop="workstation_config.controller_config_id" label="控制器ID">
                     <template #default="{ row }">
                         {{ getControllerLabel(row.workstation_config.controller_config_id) }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="workstation_config.sequence_count" label="Sequence 数量" />
-                <el-table-column prop="workstation_config.camera_reset_time" label="相机复位时间" />
-                <el-table-column prop="workstation_config.sequences_id" label="Sequences IDs">
+                <el-table-column prop="workstation_config.camera_reset_time" label="相机复位时间(ms)" />
+                <el-table-column prop="workstation_config.sequences_id" label="Sequences Repeat">
                     <template #default="{ row }">
                         {{ row.workstation_config.sequences_id.join(', ') }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="workstation_config.sequences_interval" label="Sequences 之间的间隔">
+                <el-table-column prop="workstation_config.sequences_interval" label="Sequences 之间的间隔(ms)">
                     <template #default="{ row }">
                         {{ row.workstation_config.sequences_interval.join(', ') }}
                     </template>

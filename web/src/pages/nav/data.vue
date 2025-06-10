@@ -73,8 +73,9 @@
         <el-table-column type="selection" width="55"></el-table-column> <!-- 选择列 -->
         <el-table-column prop="id" label="ID" width="80" :formatter="formatID"></el-table-column>
         <el-table-column prop="name" label="名称" width="120" :formatter="formatName"></el-table-column>
-        <el-table-column prop="material_image_count" label="物料图片数量" :formatter="formatMIC"></el-table-column>
+<!--        <el-table-column prop="material_image_count" label="物料图片数量" :formatter="formatMIC"></el-table-column>
         <el-table-column prop="material_inference_times" label="物料图片推理次数" :formatter="formatMIT"></el-table-column>
+        -->
         <el-table-column prop="controller_version" label="控制器版本" :formatter="formatCV"></el-table-column>
         <el-table-column prop="fps" label="FramesPerSecond" :formatter="formatFps"></el-table-column>
         <el-table-column prop="mps" label="MegapixelsPerSecond" :formatter="formatMps"></el-table-column>
@@ -182,6 +183,18 @@ const getSelectData = async () => {
   }
 
 };
+const getColumnWidths = (aoa) =>{
+  const colWidths = [];
+
+  aoa.forEach(row => {
+    row.forEach((cell, idx) => {
+      const len = cell ? String(cell).length : 0;
+      colWidths[idx] = Math.max(colWidths[idx] || 10, len + 2);
+    });
+  });
+
+  return colWidths.map(wch => ({ wch }));
+}
 const exportData = async () => {
   await nextTick();
 
@@ -236,6 +249,7 @@ const exportData = async () => {
   console.log(sheetData)
 
   const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+  worksheet['!cols'] = getColumnWidths(sheetData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 

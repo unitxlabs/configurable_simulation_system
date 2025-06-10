@@ -40,6 +40,7 @@ const tableData = ref([
     { item: "CPU使用率", value: "0%" },
     { item: "磁盘占用", value: "0%" },
     { item: "内存占用", value: "0%" },
+    { item: "GPU占用", value: "0%" },
 ]);
 
 const activeTab = ref("run");
@@ -103,7 +104,18 @@ const stop = async () => {
         ElMessage.error("Error stopping task:"+ error.response.data.detail);
     }
 };
+const getColumnWidths = (aoa) =>{
+  const colWidths = [];
 
+  aoa.forEach(row => {
+    row.forEach((cell, idx) => {
+      const len = cell ? String(cell).length : 0;
+      colWidths[idx] = Math.max(colWidths[idx] || 10, len + 2);
+    });
+  });
+
+  return colWidths.map(wch => ({ wch }));
+}
 const exportData = async () => {
     if (taskStatus.value === 0 && taskStatus.value === 3) return;
     try {
@@ -157,6 +169,7 @@ const exportData = async () => {
         console.log(sheetData)
 
         const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+        worksheet['!cols'] = getColumnWidths(sheetData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 
@@ -187,12 +200,13 @@ const initCharts = () => {
             },
         },
         tooltip: { trigger: "axis" },
-        legend: { data: ["CPU", "磁盘"], top: "30" },
+        legend: { data: ["CPU", "磁盘","GPU"], top: "30" },
         xAxis: { type: "category", data: [currentTime] },
         yAxis: { type: "value" },
         series: [
             { name: "CPU", type: "line", data: [0] },
             { name: "磁盘", type: "line", data: [0] },
+            { name: "GPU", type: "line", data: [0] },
         ],
     });
 
@@ -224,21 +238,24 @@ const MAX_DATA_POINTS = 10;
 const updateChartsData = async () => {
     try {
         const data = await fetchRunInfo();
-        const { cpuData, diskData, memoryData, timeData } = data.data;
+        const { cpuData, diskData, gpuData,memoryData, timeData } = data.data;
         if (!window.chartData) {
             window.chartData = {
                 cpu: [],
                 disk: [],
                 time: [],
+                gpu: [],
             };
         }
         const latestTime = timeData;
         window.chartData.cpu.push(cpuData.at(-1));
         window.chartData.disk.push(diskData.at(-1));
+        window.chartData.gpu.push(gpuData.at(-1));
         window.chartData.time.push(latestTime);
         if (window.chartData.cpu.length > MAX_DATA_POINTS) {
             window.chartData.cpu.shift();
             window.chartData.disk.shift();
+            window.chartData.gpu.shift();
             window.chartData.time.shift();
         }
 
@@ -250,6 +267,7 @@ const updateChartsData = async () => {
                     series: [
                         { name: "CPU", type: "line", data: window.chartData.cpu },
                         { name: "磁盘", type: "line", data: window.chartData.disk },
+                        { name: "GPU", type: "line", data: window.chartData.gpu },
                     ],
                 });
             }
@@ -273,6 +291,7 @@ const updateChartsData = async () => {
         tableData.value = [
             { item: "CPU使用率", value: `${cpuData[cpuData.length - 1]}%` },
             { item: "磁盘占用", value: `${diskData[diskData.length - 1]}%` },
+            { item: "GPU使用率", value: `${gpuData[gpuData.length - 1]}%` },
             { item: "内存占用", value: `${memoryData[0].value}%` },
         ];
     } catch (error) {
