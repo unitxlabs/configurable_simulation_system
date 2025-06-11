@@ -103,7 +103,7 @@ const form = ref({
 const cpuOptions = ref([]);
 const gpuOptions = ref([]);
 const defaultFields = [
-  { key: 'search', label: '搜索' },
+ // { key: 'search', label: '搜索' },
   { key: 'cpu', label: 'CPU', source: cpuOptions },
   { key: 'gpu', label: 'GPU', source: gpuOptions }
 ];

@@ -12,6 +12,7 @@ def get_data_list(
     cpu: Optional[str] = Query(None, description="CPU 参数"),
     gpu: Optional[str] = Query(None, description="GPU 参数"),
     camera_count: Optional[int] = Query(None, description="摄像头数量"),
+    part_interval: Optional[int] = Query(None, description="物料间隔"),
     camera_resolution: Optional[str] = Query(None, description="摄像头分辨率"),
     total_image_count: Optional[int] = Query(None, description="素材图片数量"),
     total_inference_count: Optional[int] = Query(None, description="素材推理次数"),
@@ -21,6 +22,8 @@ def get_data_list(
     data_dict = {}
     if cpu:
         data_dict["cpu"] = cpu
+    if part_interval:
+        data_dict["part_interval"] = part_interval
     if gpu:
         data_dict["gpus"] = gpu.split(",")
     if camera_count:
